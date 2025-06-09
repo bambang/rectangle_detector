@@ -1,0 +1,19 @@
+{
+    "swift.buildPath": "/usr/bin/swift-build",
+    "sourcekit-lsp.serverPath": "/usr/bin/sourcekit-lsp",
+    "swift.SDK": "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
+    "swift.target": "arm64-apple-ios12.0",
+    "swift.searchPaths": [
+        "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/System/Library/Frameworks"
+    ],
+    "swift.enableSourcekitLSP": true,
+    "swift.diagnostics": true,
+    "swift.autoGenerateCompileCommands": true,
+    "swift.backgroundIndexing": true,
+    "sourcekit-lsp.inlayHints.enabled": true,
+    "sourcekit-lsp.completion.maxResults": 200,
+    "files.associations": {
+        "*.swift": "swift"
+    }
+}
