@@ -292,13 +292,16 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Flexible(
-              child: Text(
-                '控制面板',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '控制面板',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             GestureDetector(
@@ -308,15 +311,15 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                 });
               },
               child: Container(
-                width: 24,
-                height: 24,
+                width: 16,
+                height: 16,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
                 child: const Icon(
                   Icons.close,
-                  size: 16,
+                  size: 12,
                   color: Colors.black54,
                 ),
               ),
@@ -326,79 +329,95 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         const SizedBox(height: 12),
         
         // 按钮区域
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _pickImage,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
-                  minimumSize: const Size(0, 24),
-                ),
-                child: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '选择图片',
-                    style: TextStyle(fontSize: 9),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 2),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _isDetecting || _image == null ? null : _detectRectangles,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
-                  minimumSize: const Size(0, 24),
-                ),
-                child: _isDetecting
-                    ? const SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.0,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          '检测矩形',
-                          style: TextStyle(fontSize: 9),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // 根据可用宽度计算按钮高度，保持合理的宽高比
+            double buttonHeight = (constraints.maxWidth * 0.15).clamp(24.0, 40.0);
+            
+            return Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: buttonHeight,
+                    child: ElevatedButton(
+                      onPressed: _pickImage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-              ),
-            ),
-          ],
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '选择图片',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: SizedBox(
+                    height: buttonHeight,
+                    child: ElevatedButton(
+                      onPressed: _isDetecting || _image == null ? null : _detectRectangles,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: _isDetecting
+                          ? SizedBox(
+                              width: buttonHeight * 0.4,
+                              height: buttonHeight * 0.4,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '检测矩形',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 12),
         
         // 显示选项开关
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey[300]!),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
+              const Expanded(
                 child: Text(
-                  '最大矩形',
-                  style: const TextStyle(fontSize: 8),
-                  textAlign: TextAlign.center,
+                  '显示最大矩形',
+                  style: TextStyle(fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Transform.scale(
-                scale: 0.6,
+                scale: 0.8,
                 child: Switch(
                   value: _showOnlyLargestRectangle,
                   onChanged: (value) {
