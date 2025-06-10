@@ -44,9 +44,9 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
     // 使用OpenCVManager初始化OpenCV
     openCVManager.initialize(context) { success ->
       if (success) {
-        Log.d(TAG, "OpenCV initialization completed successfully")
+        DebugLogger.d(TAG, "OpenCV initialization completed successfully")
       } else {
-        Log.e(TAG, "OpenCV initialization failed")
+        DebugLogger.e(TAG, "OpenCV initialization failed")
       }
     }
   }
@@ -97,7 +97,7 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
       
       result.success(rectangle)
     } catch (e: Exception) {
-      Log.e(TAG, "Error detecting rectangle", e)
+      DebugLogger.e(TAG, "Error detecting rectangle", e)
       result.error("DETECTION_ERROR", "Failed to detect rectangle: ${e.message}", null)
     }
   }
@@ -126,7 +126,7 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
       
       result.success(rectangles)
     } catch (e: Exception) {
-      Log.e(TAG, "Error detecting rectangles", e)
+      DebugLogger.e(TAG, "Error detecting rectangles", e)
       result.error("DETECTION_ERROR", "Failed to detect rectangles: ${e.message}", null)
     }
   }

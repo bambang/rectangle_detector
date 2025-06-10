@@ -18,25 +18,6 @@ extension UIImage {
     }
 }
 
-/// 矩形特征点结构体
-struct RectangleFeature {
-    let topLeft: CGPoint
-    let topRight: CGPoint
-    let bottomLeft: CGPoint
-    let bottomRight: CGPoint
-    
-    /// 转换为字典格式，便于传递给Flutter
-    func toDictionary() -> [String: Any] {
-        return [
-            "topLeft": ["x": topLeft.x, "y": topLeft.y],
-            "topRight": ["x": topRight.x, "y": topRight.y],
-            "bottomLeft": ["x": bottomLeft.x, "y": bottomLeft.y],
-            "bottomRight": ["x": bottomRight.x, "y": bottomRight.y]
-        ]
-    }
-}
-
-
 
 class RectangleDetector {
     /// 获取图片中最大矩形的四个顶点坐标
@@ -66,11 +47,30 @@ class RectangleDetector {
         return largestRectangle
     }
     
+    /// 标准化图像处理
+    /// 修正图像方向并进行轻微的对比度增强，保持原始尺寸以避免坐标转换问题
+    /// - Parameter image: 输入图片
+    /// - Returns: 标准化后的CIImage
+    private static func normalizeImage(_ image: UIImage) -> CIImage? {
+        guard let ciImage = image.toCIImage() else { return nil }
+        
+        // 1. 修正图像方向（如果有EXIF信息）
+        let orientedImage = ciImage.oriented(forExifOrientation: Int32(image.imageOrientation.rawValue))
+        
+        // 2. 轻微的对比度增强以改善边缘检测（保持原始尺寸）
+        let enhancedImage = orientedImage.applyingFilter("CIColorControls", parameters: [
+            "inputContrast": 1.1
+        ])
+        
+        return enhancedImage
+    }
+
+
     /// 获取图片中所有矩形的四个顶点坐标
     /// - Parameter image: 输入图片
     /// - Returns: 包含所有矩形顶点坐标的数组
     static func detectAllRectangles(in image: UIImage) -> [RectangleFeature] {
-        guard let ciImage = image.toCIImage() else { return [] }
+        guard let ciImage = normalizeImage(image) else { return [] }
         return detectAllRectanglesWithVision(in: ciImage)
     }
 
@@ -82,12 +82,7 @@ class RectangleDetector {
         var results: [RectangleFeature] = []
         let semaphore = DispatchSemaphore(value: 0)
         
-        // 图片增强：提高对比度以改善边缘检测效果
-        let enhancedImage = image.applyingFilter("CIColorControls", parameters: [
-            "inputContrast": 1.1
-        ])
-        
-        let imageRequestHandler = VNImageRequestHandler(ciImage: enhancedImage, options: [:])
+        let imageRequestHandler = VNImageRequestHandler(ciImage: image, options: [:])
         
         let rectangleDetectionRequest = VNDetectRectanglesRequest { request, error in
             guard error == nil, 
@@ -132,10 +127,10 @@ class RectangleDetector {
         }
         
         // 优化检测参数以获得更准确的矩形检测结果
-        rectangleDetectionRequest.minimumConfidence = 0.6        // 降低置信度阈值，检测更多候选矩形
-        rectangleDetectionRequest.maximumObservations = 20       // 增加最大检测数量
-        rectangleDetectionRequest.minimumAspectRatio = 0.2       // 降低最小宽高比限制，支持更多形状
-        
+        rectangleDetectionRequest.minimumConfidence = 0.7        // 降低置信度阈值，检测更多候选矩形
+        rectangleDetectionRequest.maximumObservations = 10       // 限制检测数量
+        rectangleDetectionRequest.minimumAspectRatio = 0.4       // 降低最小宽高比限制，支持更多形状
+
         do {
             try imageRequestHandler.perform([rectangleDetectionRequest])
         } catch {

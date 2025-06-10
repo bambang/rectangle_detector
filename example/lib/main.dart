@@ -80,13 +80,14 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   }
 
   /// 选择图片
+  /// 移除尺寸和质量限制，保持原始图片质量以确保检测结果一致性
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
+        maxWidth: 3840,  // 4K分辨率
+        maxHeight: 3840,
+        imageQuality: 100,
       );
       
       if (pickedFile != null) {
@@ -223,24 +224,33 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   }
 
   /// 构建悬浮控制面板
+  /// 根据屏幕宽度动态调整面板尺寸，避免布局溢出
   Widget _buildFloatingControlPanel() {
     return Positioned(
       top: 16,
       right: 16,
-      child: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        child: AnimatedContainer(
-           duration: const Duration(milliseconds: 300),
-           width: _isPanelExpanded ? 320 : 56,
-           constraints: BoxConstraints(
-             maxHeight: _isPanelExpanded ? 400 : 56,
-             minHeight: 56,
-           ),
-           padding: const EdgeInsets.all(8),
-           child: _isPanelExpanded ? _buildExpandedPanel() : _buildCollapsedPanel(),
-         ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 根据可用空间动态计算面板宽度
+          final screenWidth = MediaQuery.of(context).size.width;
+          final maxPanelWidth = (screenWidth - 32).clamp(240.0, 360.0); // 留出左右各16像素边距，最小宽度降至240
+          
+          return Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            child: AnimatedContainer(
+               duration: const Duration(milliseconds: 300),
+               width: _isPanelExpanded ? maxPanelWidth : 56,
+               constraints: BoxConstraints(
+                 maxHeight: _isPanelExpanded ? 400 : 56,
+                 minHeight: 56,
+               ),
+               padding: const EdgeInsets.all(8),
+               child: _isPanelExpanded ? _buildExpandedPanel() : _buildCollapsedPanel(),
+             ),
+          );
+        },
       ),
     );
   }
@@ -253,17 +263,19 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           _isPanelExpanded = true;
         });
       },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.blue,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(
-          Icons.settings,
-          color: Colors.white,
-          size: 24,
+      child: Center(
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.settings,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
       ),
     );
@@ -279,11 +291,14 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              '控制面板',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            const Flexible(
+              child: Text(
+                '控制面板',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             GestureDetector(
@@ -312,40 +327,51 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         
         // 按钮区域
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Expanded(
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: _pickImage,
-                icon: const Icon(Icons.photo_library, size: 16),
-                label: const Text('选择图片', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
+                  minimumSize: const Size(0, 24),
+                ),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '选择图片',
+                    style: TextStyle(fontSize: 9),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 2),
             Expanded(
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: _isDetecting || _image == null ? null : _detectRectangles,
-                icon: _isDetecting 
-                    ? const SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.search, size: 16),
-                label: Text(
-                  _isDetecting ? '检测中' : '检测矩形',
-                  style: const TextStyle(fontSize: 12),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
+                  minimumSize: const Size(0, 24),
                 ),
+                child: _isDetecting
+                    ? const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.0,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '检测矩形',
+                          style: TextStyle(fontSize: 9),
+                        ),
+                      ),
               ),
             ),
           ],
@@ -354,28 +380,35 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         
         // 显示选项开关
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(color: Colors.grey[300]!),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                '只显示最大矩形',
-                style: TextStyle(fontSize: 12),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '最大矩形',
+                  style: const TextStyle(fontSize: 8),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              Switch(
-                value: _showOnlyLargestRectangle,
-                onChanged: (value) {
-                  setState(() {
-                    _showOnlyLargestRectangle = value;
-                  });
-                },
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                activeColor: Colors.blue,
+              Transform.scale(
+                scale: 0.6,
+                child: Switch(
+                  value: _showOnlyLargestRectangle,
+                  onChanged: (value) {
+                    setState(() {
+                      _showOnlyLargestRectangle = value;
+                    });
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  activeColor: Colors.blue,
+                ),
               ),
             ],
           ),

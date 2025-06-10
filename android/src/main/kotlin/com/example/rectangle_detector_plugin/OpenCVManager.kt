@@ -37,7 +37,7 @@ class OpenCVManager private constructor() {
      */
     fun initialize(context: Context, callback: (Boolean) -> Unit) {
         if (isInitialized) {
-            Log.d(TAG, "OpenCV already initialized")
+            DebugLogger.d(TAG, "OpenCV already initialized")
             callback(true)
             return
         }
@@ -47,11 +47,11 @@ class OpenCVManager private constructor() {
         
         // 如果已经在初始化中，直接返回等待结果
         if (initCallbacks.size > 1) {
-            Log.d(TAG, "OpenCV initialization in progress, waiting...")
+            DebugLogger.d(TAG, "OpenCV initialization in progress, waiting...")
             return
         }
         
-        Log.d(TAG, "Starting OpenCV initialization using initLocal()")
+        DebugLogger.d(TAG, "Starting OpenCV initialization using initLocal()")
         
         try {
             // 使用新的OpenCV 4.9.0+ API进行初始化
@@ -59,9 +59,9 @@ class OpenCVManager private constructor() {
             isInitialized = success
             
             if (success) {
-                Log.d(TAG, "OpenCV loaded successfully using initLocal()")
+                DebugLogger.d(TAG, "OpenCV loaded successfully using initLocal()")
             } else {
-                Log.e(TAG, "OpenCV initialization failed")
+                DebugLogger.e(TAG, "OpenCV initialization failed")
             }
             
             // 通知所有等待的回调
@@ -70,7 +70,7 @@ class OpenCVManager private constructor() {
                 initCallbacks.clear()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "OpenCV initialization exception: ${e.message}", e)
+            DebugLogger.e(TAG, "OpenCV initialization exception: ${e.message}", e)
             isInitialized = false
             
             // 通知所有等待的回调初始化失败
@@ -92,7 +92,7 @@ class OpenCVManager private constructor() {
      * 注意：这个方法应该谨慎使用，通常只在测试环境中调用
      */
     fun reset() {
-        Log.w(TAG, "Resetting OpenCV initialization state")
+        DebugLogger.w(TAG, "Resetting OpenCV initialization state")
         isInitialized = false
         synchronized(initCallbacks) {
             initCallbacks.clear()

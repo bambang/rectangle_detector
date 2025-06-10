@@ -5,11 +5,7 @@ import android.util.Log
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
-import kotlin.math.abs
-import kotlin.math.sqrt
-import kotlin.math.pow
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.*
 
 /**
  * RectangleDetector
@@ -47,19 +43,21 @@ class RectangleDetector {
             // 按评分排序，评分高的在前
             val sortedCandidates = candidates.sortedByDescending { it.second }
             
-            Log.i(TAG, "Found ${sortedCandidates.size} rectangle candidates")
+            DebugLogger.i(TAG, "Found ${sortedCandidates.size} rectangle candidates")
             
             sortedCandidates.map { (rectangle, score) ->
-                mapOf(
-                    "topLeft" to mapOf("x" to rectangle[0].x, "y" to rectangle[0].y),
-                    "topRight" to mapOf("x" to rectangle[1].x, "y" to rectangle[1].y),
-                    "bottomRight" to mapOf("x" to rectangle[2].x, "y" to rectangle[2].y),
-                    "bottomLeft" to mapOf("x" to rectangle[3].x, "y" to rectangle[3].y),
-                    "score" to score
+                val rectangleFeature = RectangleFeature(
+                    topLeft = rectangle[0],
+                    topRight = rectangle[1],
+                    bottomLeft = rectangle[3],
+                    bottomRight = rectangle[2]
                 )
+                val result = rectangleFeature.toDictionary().toMutableMap()
+                result["score"] = score
+                result
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Rectangle detection failed", e)
+            DebugLogger.e(TAG, "Rectangle detection failed", e)
             emptyList()
         }
     }
@@ -100,7 +98,7 @@ class RectangleDetector {
         val hierarchy = Mat()
         Imgproc.findContours(dilate, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE)
         
-        Log.i(TAG, "Found ${contours.size} contours")
+        DebugLogger.i(TAG, "Found ${contours.size} contours")
         
         // 简化轮廓过滤：只排除明显过大或过小的轮廓
         val imageArea = size.width * size.height
@@ -111,7 +109,7 @@ class RectangleDetector {
             areaRatio in 0.01..0.8
         }
         
-        Log.i(TAG, "Original contours: ${contours.size}, Filtered contours: ${filteredContours.size}")
+        DebugLogger.i(TAG, "Original contours: ${contours.size}, Filtered contours: ${filteredContours.size}")
         
         val validContours = ArrayList(filteredContours)
         validContours.sortByDescending { p: MatOfPoint -> Imgproc.contourArea(p) }
@@ -136,7 +134,7 @@ class RectangleDetector {
         val candidates = mutableListOf<Pair<List<Point>, Double>>()
         val maxCandidates = minOf(contours.size, 30) // 增加到30个轮廓，扩大搜索范围
         
-        Log.i(TAG, "Processing ${contours.size} contours, checking top $maxCandidates")
+        DebugLogger.i(TAG, "Processing ${contours.size} contours, checking top $maxCandidates")
         
         for (index in 0 until maxCandidates) {
             try {
@@ -152,7 +150,7 @@ class RectangleDetector {
                     Imgproc.approxPolyDP(c2f, approx, epsilon * peri, true)
                     val points = approx.toArray().asList()
                     
-                    Log.d(TAG, "Contour $index: epsilon=${epsilon}, points=${points.size}, area=${Imgproc.contourArea(c2f)}")
+                    DebugLogger.d(TAG, "Contour $index: epsilon=${epsilon}, points=${points.size}, area=${Imgproc.contourArea(c2f)}")
                     
                     // 检查是否为四边形
                     if (points.size == 4) {
@@ -161,7 +159,7 @@ class RectangleDetector {
                         
                         // 检查是否为凸四边形，但允许轻微的不规则
                         val isConvex = Imgproc.isContourConvex(convex)
-                        Log.d(TAG, "Contour $index: epsilon=${epsilon}, convex check = $isConvex")
+                        DebugLogger.d(TAG, "Contour $index: epsilon=${epsilon}, convex check = $isConvex")
                         
                         // 对于纯矩形图案，放宽凸性检查，允许轻微的数值误差
                         val shouldAccept = isConvex || (points.size == 4 && Imgproc.contourArea(approx) > imageSize.width * imageSize.height * 0.05)
@@ -172,12 +170,12 @@ class RectangleDetector {
                             val score = calculateRectangleScore(sortedPoints, Imgproc.contourArea(approx), imageSize)
                             candidates.add(Pair(sortedPoints, score))
                             
-                            Log.i(TAG, "Found rectangle candidate $index: score = $score, convex = $isConvex, accepted = $shouldAccept")
+                            DebugLogger.i(TAG, "Found rectangle candidate $index: score = $score, convex = $isConvex, accepted = $shouldAccept")
                             
                             // 打印四个角的详细坐标
-                            Log.d(TAG, "检测到的四个角坐标:")
+                            DebugLogger.d(TAG, "检测到的四个角坐标:")
                             sortedPoints.forEachIndexed { pointIndex, point ->
-                                Log.d(TAG, "角点 $pointIndex: (${point.x}, ${point.y})")
+                                DebugLogger.d(TAG, "角点 $pointIndex: (${point.x}, ${point.y})")
                             }
                             
                             foundQuad = true
@@ -188,18 +186,18 @@ class RectangleDetector {
                 }
                 
                 if (!foundQuad) {
-                    Log.d(TAG, "Contour $index: no valid quadrilateral found")
+                    DebugLogger.d(TAG, "Contour $index: no valid quadrilateral found")
                 }
                 
                 c2f.release()
                 approx.release()
                 
             } catch (e: Exception) {
-                Log.w(TAG, "Error processing contour $index: ${e.message}")
+                DebugLogger.w(TAG, "Error processing contour $index: ${e.message}")
             }
         }
         
-        Log.i(TAG, "Total candidates found: ${candidates.size}")
+        DebugLogger.i(TAG, "Total candidates found: ${candidates.size}")
         
         return candidates
     }
@@ -296,7 +294,7 @@ class RectangleDetector {
         // 综合评分 (面积权重绝对主导，大面积获得额外加分)
         val totalScore = areaScore * 0.8 + aspectScore * 0.1 + edgeScore * 0.05 + positionScore * 0.05 + areaBonus
         
-        Log.i(TAG, "Rectangle score breakdown: area=$areaScore (ratio=$areaRatio), aspect=$aspectScore (ratio=$aspectRatio), edge=$edgeScore, position=$positionScore, areaBonus=$areaBonus, total=$totalScore")
+        DebugLogger.i(TAG, "Rectangle score breakdown: area=$areaScore (ratio=$areaRatio), aspect=$aspectScore (ratio=$aspectRatio), edge=$edgeScore, position=$positionScore, areaBonus=$areaBonus, total=$totalScore")
         
         return totalScore
     }
