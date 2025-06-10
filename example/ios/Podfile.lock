@@ -27,7 +27,7 @@ SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  rectangle_detector: bb138653d601470379d0c8201a2330afa674acf0
+  rectangle_detector: f895bb40ee01b55d6e08236a3e0c05cdd3b8c416
 
 PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5
 
