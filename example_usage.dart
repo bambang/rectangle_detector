@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:rectangle_detector/rectangle_detector.dart';
 
