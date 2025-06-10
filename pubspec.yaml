@@ -39,7 +39,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.rectangle_detector
+        package: com.yongtaisin.rectangle_detector
         pluginClass: RectangleDetectorPlugin
       ios:
         pluginClass: RectangleDetectorPlugin

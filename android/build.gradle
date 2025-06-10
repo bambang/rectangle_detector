@@ -1,4 +1,4 @@
-group = "com.example.rectangle_detector"
+group = "com.yongtaisin.rectangle_detector"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -25,7 +25,7 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 android {
-    namespace = "com.example.rectangle_detector"
+    namespace = "com.yongtaisin.rectangle_detector"
 
     compileSdk = 35
 
