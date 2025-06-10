@@ -1,7 +1,8 @@
 name: rectangle_detector
 description: "基于原生提供矩形特征点识别功能的Dart插件"
 version: 0.0.1
-homepage:
+homepage: https://github.com/YongTaiSin/rectangle_detector
+repository: https://github.com/YongTaiSin/rectangle_detector
 
 environment:
   sdk: ^3.8.1

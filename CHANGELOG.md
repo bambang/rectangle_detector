@@ -1,3 +1,8 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+* 初始发布版本
+* 实现矩形特征点位识别功能
+* 支持多平台：Android、iOS、macOS、Web
+* 提供原生平台接口调用
+* 包含完整的示例应用
+* 基于Flutter插件架构设计
