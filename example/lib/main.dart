@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:io';
 import 'dart:math' show Point;
 
 import 'package:flutter/material.dart';
@@ -58,7 +57,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   Future<void> _loadDefaultImage() async {
     try {
       // 从assets加载默认图片
-      final ByteData data = await rootBundle.load('assets/images/shapes.jpeg');
+      final ByteData data = await rootBundle.load('assets/images/tv.jpeg');
       final Uint8List bytes = data.buffer.asUint8List();
       
       // 解码图片
@@ -91,8 +90,8 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
       );
       
       if (pickedFile != null) {
-        final File imageFile = File(pickedFile.path);
-        final Uint8List bytes = await imageFile.readAsBytes();
+        // 使用 XFile 的 readAsBytes 方法，兼容 Web 平台
+        final Uint8List bytes = await pickedFile.readAsBytes();
         
         // 解码图片
         final ui.Codec codec = await ui.instantiateImageCodec(bytes);

@@ -41,6 +41,9 @@ flutter:
         pluginClass: RectangleDetectorPlugin
       macos:
         pluginClass: RectangleDetectorPlugin
+      web:
+        pluginClass: RectangleDetectorWeb
+        fileName: rectangle_detector_web.dart
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

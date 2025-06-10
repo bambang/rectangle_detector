@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Demonstrates how to use the rectangle_detector plugin.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="example">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>example</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    // The value below is injected by flutter build, do not touch.
+    const serviceWorkerVersion = null;
+  </script>
+  <!-- This script adds the flutter initialization JS code -->
+  <script src="flutter.js" defer></script>
+  
+  <style>
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div>正在加载 OpenCV.js...</div>
+  </div>
+  
+  <!-- 隐藏的 canvas 用于图像处理 -->
+  <canvas id="hiddenCanvas" class="hidden"></canvas>
+  
+  <script>
+    // OpenCV.js 加载状态
+    let openCVReady = false;
+    
+    // OpenCV.js 模块配置
+    var Module = {
+      onRuntimeInitialized() {
+        openCVReady = true;
+        window.openCVReady = true;
+        document.getElementById('loading').style.display = 'none';
+        console.log('OpenCV.js 已加载完成');
+      }
+    };
+    
+    /**
+     * 检测图片中的单个最大矩形
+     * @param {HTMLImageElement} imageElement - 图像元素
+     * @returns {Object|null} 矩形的四个顶点坐标，如果未检测到则返回null
+     */
+    function detectSingleRectangle(imageElement) {
+      if (!openCVReady || !cv || !cv.imread) {
+        throw new Error('OpenCV.js 未准备就绪');
+      }
+      
+      try {
+        // 读取图像
+        let src = cv.imread(imageElement);
+        let rectangles = processImageForRectangles(src);
+        
+        // 清理内存
+        src.delete();
+        
+        // 返回最大的矩形（如果有的话）
+        if (rectangles.length > 0) {
+          return rectangles[0]; // 返回面积最大的矩形
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('单个矩形检测错误:', error);
+        return null;
+      }
+    }
+    
+    /**
+     * 检测图片中的所有矩形
+     * @param {HTMLImageElement} imageElement - 图像元素
+     * @returns {Array} 所有矩形的四个顶点坐标数组
+     */
+    function detectAllRectangles(imageElement) {
+      if (!openCVReady || !cv || !cv.imread) {
+        throw new Error('OpenCV.js 未准备就绪');
+      }
+      
+      try {
+        // 读取图像
+        let src = cv.imread(imageElement);
+        let rectangles = processImageForRectangles(src);
+        
+        // 清理内存
+        src.delete();
+        
+        return rectangles;
+      } catch (error) {
+        console.error('所有矩形检测错误:', error);
+        return [];
+      }
+    }
+    
+    /**
+     * 处理图像并检测矩形
+     * @param {cv.Mat} src - 源图像矩阵
+     * @returns {Array} 检测到的矩形数组
+     */
+    function processImageForRectangles(src) {
+      let gray = new cv.Mat();
+      let blurred = new cv.Mat();
+      let edges = new cv.Mat();
+      let contours = new cv.MatVector();
+      let hierarchy = new cv.Mat();
+      
+      try {
+        // 转换为灰度图
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        
+        // 高斯模糊以减少噪声
+        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+        
+        // 边缘检测
+        cv.Canny(blurred, edges, 50, 150, 3, false);
+        
+        // 形态学操作以连接断开的边缘
+        let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+        cv.morphologyEx(edges, edges, cv.MORPH_CLOSE, kernel);
+        kernel.delete();
+        
+        // 查找轮廓
+        cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        let rectangles = [];
+        let imageArea = src.rows * src.cols;
+        
+        // 遍历轮廓，查找矩形
+        for (let i = 0; i < contours.size(); i++) {
+          let contour = contours.get(i);
+          let area = cv.contourArea(contour);
+          
+          // 过滤太小的轮廓（面积小于图像的1%）
+          if (area < imageArea * 0.01) {
+            contour.delete();
+            continue;
+          }
+          
+          let approx = new cv.Mat();
+          let perimeter = cv.arcLength(contour, true);
+          
+          // 轮廓近似
+          cv.approxPolyDP(contour, approx, 0.02 * perimeter, true);
+          
+          // 检查是否为四边形（矩形）
+          if (approx.rows === 4) {
+            let points = [];
+            
+            // 提取四个顶点
+            for (let j = 0; j < 4; j++) {
+              points.push({
+                x: approx.data32S[j * 2],
+                y: approx.data32S[j * 2 + 1]
+              });
+            }
+            
+            // 按顺序排列顶点：左上、右上、右下、左下
+            let sortedPoints = sortRectanglePoints(points);
+            
+            rectangles.push({
+              topLeft: sortedPoints[0],
+              topRight: sortedPoints[1],
+              bottomRight: sortedPoints[2],
+              bottomLeft: sortedPoints[3],
+              area: area
+            });
+          }
+          
+          approx.delete();
+          contour.delete();
+        }
+        
+        // 按面积降序排序
+        rectangles.sort((a, b) => b.area - a.area);
+        
+        // 移除面积属性（只返回坐标）
+        return rectangles.map(rect => ({
+          topLeft: rect.topLeft,
+          topRight: rect.topRight,
+          bottomRight: rect.bottomRight,
+          bottomLeft: rect.bottomLeft
+        }));
+        
+      } finally {
+        // 清理内存
+        gray.delete();
+        blurred.delete();
+        edges.delete();
+        contours.delete();
+        hierarchy.delete();
+      }
+    }
+    
+    /**
+     * 按顺序排列矩形的四个顶点
+     * @param {Array} points - 四个顶点数组
+     * @returns {Array} 排序后的顶点数组 [左上, 右上, 右下, 左下]
+     */
+    function sortRectanglePoints(points) {
+      // 计算质心
+      let centerX = points.reduce((sum, p) => sum + p.x, 0) / 4;
+      let centerY = points.reduce((sum, p) => sum + p.y, 0) / 4;
+      
+      // 根据相对于质心的位置对点进行分类
+      let topLeft = null, topRight = null, bottomLeft = null, bottomRight = null;
+      
+      for (let point of points) {
+        if (point.x < centerX && point.y < centerY) {
+          topLeft = point;
+        } else if (point.x >= centerX && point.y < centerY) {
+          topRight = point;
+        } else if (point.x >= centerX && point.y >= centerY) {
+          bottomRight = point;
+        } else {
+          bottomLeft = point;
+        }
+      }
+      
+      // 如果某个角落没有点，使用最接近的点
+      if (!topLeft) topLeft = points.reduce((closest, p) => 
+        (Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2) < 
+         Math.sqrt((closest.x - centerX) ** 2 + (closest.y - centerY) ** 2)) ? p : closest
+      );
+      
+      if (!topRight) topRight = points.find(p => p !== topLeft) || points[1];
+      if (!bottomRight) bottomRight = points.find(p => p !== topLeft && p !== topRight) || points[2];
+      if (!bottomLeft) bottomLeft = points.find(p => p !== topLeft && p !== topRight && p !== bottomRight) || points[3];
+      
+      return [topLeft, topRight, bottomRight, bottomLeft];
+    }
+    
+    // 将函数暴露到全局作用域
+    window.detectSingleRectangle = detectSingleRectangle;
+    window.detectAllRectangles = detectAllRectangles;
+  </script>
+  
+  <!-- 加载 OpenCV.js -->
+  <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
+  
+  <script>
+    window.addEventListener('load', function(ev) {
+      // Download main.dart.js
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

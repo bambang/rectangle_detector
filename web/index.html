@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rectangle Detector Plugin - Web</title>
+  <style>
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div>正在加载 OpenCV.js...</div>
+  </div>
+  
+  <!-- 隐藏的 canvas 用于图像处理 -->
+  <canvas id="hiddenCanvas" class="hidden"></canvas>
+  
+  <script>
+    // OpenCV.js 加载状态
+    let openCVReady = false;
+    
+    // OpenCV.js 模块配置
+    var Module = {
+      onRuntimeInitialized() {
+        openCVReady = true;
+        document.getElementById('loading').style.display = 'none';
+        console.log('OpenCV.js 已加载完成');
+      }
+    };
+    
+    /**
+     * 检测图片中的单个最大矩形
+     * @param {HTMLImageElement} imageElement - 图像元素
+     * @returns {Object|null} 矩形的四个顶点坐标，如果未检测到则返回null
+     */
+    function detectSingleRectangle(imageElement) {
+      if (!openCVReady || !cv || !cv.imread) {
+        throw new Error('OpenCV.js 未准备就绪');
+      }
+      
+      try {
+        // 读取图像
+        let src = cv.imread(imageElement);
+        let rectangles = processImageForRectangles(src);
+        
+        // 清理内存
+        src.delete();
+        
+        // 返回最大的矩形（如果有的话）
+        if (rectangles.length > 0) {
+          return rectangles[0]; // 返回面积最大的矩形
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('单个矩形检测错误:', error);
+        return null;
+      }
+    }
+    
+    /**
+     * 检测图片中的所有矩形
+     * @param {HTMLImageElement} imageElement - 图像元素
+     * @returns {Array} 所有矩形的四个顶点坐标数组
+     */
+    function detectAllRectangles(imageElement) {
+      if (!openCVReady || !cv || !cv.imread) {
+        throw new Error('OpenCV.js 未准备就绪');
+      }
+      
+      try {
+        // 读取图像
+        let src = cv.imread(imageElement);
+        let rectangles = processImageForRectangles(src);
+        
+        // 清理内存
+        src.delete();
+        
+        return rectangles;
+      } catch (error) {
+        console.error('所有矩形检测错误:', error);
+        return [];
+      }
+    }
+    
+    /**
+     * 处理图像进行矩形检测的核心函数 - 完全按照Android端算法实现
+     * @param {cv.Mat} src - 输入图像
+     * @returns {Array} 检测到的矩形数组
+     */
+    function processImageForRectangles(src) {
+        console.log('开始处理图像，尺寸:', src.rows, 'x', src.cols);
+        
+        // 创建所需的Mat对象
+        let grayImage = new cv.Mat();
+        let cannedImage = new cv.Mat();
+        let dilate = new cv.Mat();
+        
+        try {
+            // 1. 转换为灰度图
+            cv.cvtColor(src, grayImage, cv.COLOR_RGBA2GRAY);
+            console.log('转换为灰度图完成');
+            
+            // 2. 轻微高斯模糊去噪，保留边缘信息
+            cv.GaussianBlur(grayImage, grayImage, new cv.Size(3, 3), 0);
+            console.log('高斯模糊完成');
+            
+            // 3. 直接使用Canny边缘检测，使用经典参数
+            cv.Canny(grayImage, cannedImage, 50, 150);
+            console.log('Canny边缘检测完成');
+            
+            // 4. 轻微膨胀操作，连接断开的边缘
+            let smallKernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+            cv.dilate(cannedImage, dilate, smallKernel);
+            smallKernel.delete();
+            console.log('膨胀操作完成');
+            
+            // 测试：先显示一个简单的测试图像
+            console.log('开始显示调试图像...');
+            
+            // 5. 查找轮廓
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(dilate, contours, hierarchy, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE);
+            
+            console.log('找到轮廓数量:', contours.size());
+            
+            // 6. 简化轮廓过滤：只排除明显过大或过小的轮廓
+            const imageArea = src.rows * src.cols;
+            const filteredContours = [];
+            
+            for (let i = 0; i < contours.size(); i++) {
+                const contour = contours.get(i);
+                const area = cv.contourArea(contour);
+                const areaRatio = area / imageArea;
+                
+                // 保留合理大小的轮廓，排除整个图像边界和噪点
+                if (areaRatio >= 0.01 && areaRatio <= 0.8) {
+                    filteredContours.push({contour, area});
+                }
+            }
+            
+            console.log('原始轮廓:', contours.size(), '过滤后轮廓:', filteredContours.length);
+            
+            // 按面积降序排序
+            filteredContours.sort((a, b) => b.area - a.area);
+            
+            // 7. 查找有效矩形
+            const rectangles = [];
+            const maxCandidates = Math.min(filteredContours.length, 30); // 检查前30个轮廓
+            
+            for (let index = 0; index < maxCandidates; index++) {
+                const {contour, area} = filteredContours[index];
+                
+                try {
+                    const peri = cv.arcLength(contour, true);
+                    const approx = new cv.Mat();
+                    
+                    // 尝试多个近似参数，从严格到宽松
+                    const epsilonValues = [0.015, 0.02, 0.025, 0.03];
+                    let foundQuad = false;
+                    
+                    for (const epsilon of epsilonValues) {
+                        cv.approxPolyDP(contour, approx, epsilon * peri, true);
+                        
+                        console.log(`轮廓 ${index}: epsilon=${epsilon}, 点数=${approx.rows}, 面积=${area}`);
+                        
+                        // 检查是否为四边形
+                        if (approx.rows === 4) {
+                            // 检查是否为凸四边形
+                            const isConvex = cv.isContourConvex(approx);
+                            console.log(`轮廓 ${index}: epsilon=${epsilon}, 凸性检查 = ${isConvex}`);
+                            
+                            // 对于大面积四边形，放宽凸性检查
+                            const shouldAccept = isConvex || (area > imageArea * 0.05);
+                            
+                            if (shouldAccept) {
+                                const points = [];
+                                for (let j = 0; j < 4; j++) {
+                                    const point = approx.data32S;
+                                    points.push({
+                                        x: point[j * 2],
+                                        y: point[j * 2 + 1]
+                                    });
+                                }
+                                
+                                const sortedPoints = sortPoints(points);
+                                const score = calculateRectangleScore(sortedPoints, area, {width: src.cols, height: src.rows});
+                                
+                                rectangles.push({
+                                    topLeft: sortedPoints[0],
+                                    topRight: sortedPoints[1],
+                                    bottomRight: sortedPoints[2],
+                                    bottomLeft: sortedPoints[3],
+                                    score: score
+                                });
+                                
+                                console.log(`找到矩形候选 ${index}: 评分=${score}, 凸性=${isConvex}, 接受=${shouldAccept}`);
+                                console.log('检测到的四个角坐标:');
+                                sortedPoints.forEach((point, pointIndex) => {
+                                    console.log(`角点 ${pointIndex}: (${point.x}, ${point.y})`);
+                                });
+                                
+                                foundQuad = true;
+                                break; // 找到四边形就停止尝试其他epsilon值
+                            }
+                        }
+                    }
+                    
+                    if (!foundQuad) {
+                        console.log(`轮廓 ${index}: 未找到有效四边形`);
+                    }
+                    
+                    approx.delete();
+                    
+                } catch (error) {
+                    console.warn(`处理轮廓 ${index} 时出错:`, error.message);
+                }
+            }
+            
+            // 按评分排序
+            rectangles.sort((a, b) => b.score - a.score);
+            
+            console.log('矩形检测完成，找到', rectangles.length, '个候选');
+            
+            // 清理资源
+            contours.delete();
+            hierarchy.delete();
+            
+            return rectangles;
+            
+        } catch (error) {
+            console.error('图像处理过程中发生错误:', error);
+            return [];
+        } finally {
+            // 清理所有Mat对象
+            [grayImage, cannedImage, dilate].forEach(mat => {
+                if (mat && !mat.isDeleted()) {
+                    mat.delete();
+                }
+            });
+        }
+    }
+
+    /**
+     * 按顺序排列矩形的四个顶点 - 完全按照Android端算法实现
+     * @param {Array} points - 四个顶点数组
+     * @returns {Array} 排序后的顶点数组 [左上, 右上, 右下, 左下]
+     */
+    function sortPoints(points) {
+        // 计算质心
+        const centerX = points.reduce((sum, p) => sum + p.x, 0) / 4;
+        const centerY = points.reduce((sum, p) => sum + p.y, 0) / 4;
+        
+        // 根据相对于质心的位置对点进行分类
+        let topLeft = null, topRight = null, bottomLeft = null, bottomRight = null;
+        
+        for (const point of points) {
+            if (point.x < centerX && point.y < centerY) {
+                topLeft = point;
+            } else if (point.x >= centerX && point.y < centerY) {
+                topRight = point;
+            } else if (point.x >= centerX && point.y >= centerY) {
+                bottomRight = point;
+            } else {
+                bottomLeft = point;
+            }
+        }
+        
+        // 如果某个角落没有点，使用最接近的点
+        if (!topLeft) topLeft = points.reduce((closest, p) => 
+            (Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2) < 
+             Math.sqrt((closest.x - centerX) ** 2 + (closest.y - centerY) ** 2)) ? p : closest
+        );
+        
+        if (!topRight) topRight = points.find(p => p !== topLeft) || points[1];
+        if (!bottomRight) bottomRight = points.find(p => p !== topLeft && p !== topRight) || points[2];
+        if (!bottomLeft) bottomLeft = points.find(p => p !== topLeft && p !== topRight && p !== bottomRight) || points[3];
+        
+        return [topLeft, topRight, bottomRight, bottomLeft];
+    }
+    
+    /**
+     * 计算矩形质量评分 - 完全按照Android端算法实现
+     * @param {Array} points - 矩形的四个顶点
+     * @param {number} area - 矩形面积
+     * @param {Object} imageSize - 图像尺寸 {width, height}
+     * @returns {number} 评分 (0-1)
+     */
+    function calculateRectangleScore(points, area, imageSize) {
+        const [tl, tr, br, bl] = points;
+        
+        // 计算四边长度
+        const topWidth = Math.sqrt(Math.pow(tr.x - tl.x, 2) + Math.pow(tr.y - tl.y, 2));
+        const bottomWidth = Math.sqrt(Math.pow(br.x - bl.x, 2) + Math.pow(br.y - bl.y, 2));
+        const leftHeight = Math.sqrt(Math.pow(bl.x - tl.x, 2) + Math.pow(bl.y - tl.y, 2));
+        const rightHeight = Math.sqrt(Math.pow(br.x - tr.x, 2) + Math.pow(br.y - tr.y, 2));
+        
+        // 1. 面积评分 (强烈优先大面积，大幅降低小面积评分)
+        const imageArea = imageSize.width * imageSize.height;
+        const areaRatio = area / imageArea;
+        let areaScore;
+        if (areaRatio >= 0.2) {
+            areaScore = 1.0;         // 大面积优先，降低阈值
+        } else if (areaRatio >= 0.1) {
+            areaScore = 0.8;         // 中等面积
+        } else if (areaRatio >= 0.05) {
+            areaScore = 0.4;         // 较小面积，大幅降分
+        } else if (areaRatio >= 0.02) {
+            areaScore = 0.1;         // 小面积，严重降分
+        } else {
+            areaScore = 0.01;        // 极小面积，几乎零分
+        }
+        
+        // 2. 基本形状评分 (极度宽松的长宽比要求)
+        const avgWidth = (topWidth + bottomWidth) / 2;
+        const avgHeight = (leftHeight + rightHeight) / 2;
+        const aspectRatio = Math.max(avgWidth, avgHeight) / Math.min(avgWidth, avgHeight);
+        let aspectScore;
+        if (aspectRatio <= 3.0) {
+            aspectScore = 1.0;       // 长宽比不超过3:1都可以接受
+        } else if (aspectRatio <= 5.0) {
+            aspectScore = 0.9;       // 稍长的矩形
+        } else if (aspectRatio <= 8.0) {
+            aspectScore = 0.8;       // 较长的矩形
+        } else if (aspectRatio <= 12.0) {
+            aspectScore = 0.7;       // 很长的矩形
+        } else {
+            aspectScore = 0.6;       // 极度狭长，但仍给予较高分数
+        }
+        
+        // 3. 边长一致性评分 (降低严格要求，允许透视变形)
+        const widthConsistency = 1.0 - Math.min(0.5, Math.abs(topWidth - bottomWidth) / Math.max(topWidth, bottomWidth));
+        const heightConsistency = 1.0 - Math.min(0.5, Math.abs(leftHeight - rightHeight) / Math.max(leftHeight, rightHeight));
+        const edgeScore = (widthConsistency + heightConsistency) / 2.0;
+        
+        // 4. 位置评分 (中心位置优先，但权重较低)
+        const centerX = (tl.x + tr.x + bl.x + br.x) / 4.0;
+        const centerY = (tl.y + tr.y + bl.y + br.y) / 4.0;
+        const imageCenterX = imageSize.width / 2.0;
+        const imageCenterY = imageSize.height / 2.0;
+        const distanceFromCenter = Math.sqrt(Math.pow(centerX - imageCenterX, 2) + Math.pow(centerY - imageCenterY, 2));
+        const maxDistance = Math.sqrt(Math.pow(imageCenterX, 2) + Math.pow(imageCenterY, 2));
+        const positionScore = 1.0 - (distanceFromCenter / maxDistance);
+        
+        // 面积加分机制：大面积四边形获得额外加分
+        const areaBonus = areaRatio >= 0.15 ? (areaRatio - 0.15) * 2.0 : 0.0;
+        
+        // 综合评分 (面积权重绝对主导，大面积获得额外加分)
+        const totalScore = areaScore * 0.8 + aspectScore * 0.1 + edgeScore * 0.05 + positionScore * 0.05 + areaBonus;
+        
+        console.log(`矩形评分详情: 面积=${areaScore} (比例=${areaRatio}), 长宽比=${aspectScore} (比例=${aspectRatio}), 边长=${edgeScore}, 位置=${positionScore}, 面积加分=${areaBonus}, 总分=${totalScore}`);
+        
+        return totalScore;
+    }
+    
+    // 将函数暴露到全局作用域
+    window.detectSingleRectangle = detectSingleRectangle;
+    window.detectAllRectangles = detectAllRectangles;
+  </script>
+  
+  <!-- 加载 OpenCV.js -->
+  <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
+</body>
+</html>
