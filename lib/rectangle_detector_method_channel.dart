@@ -42,9 +42,9 @@ class MethodChannelRectangleDetector extends RectangleDetectorPlatform {
     return [];
   }
   
-  /// 递归转换Map<Object?, Object?>为Map<String, dynamic>
+  /// 递归转换`Map<Object?, Object?>`为`Map<String, dynamic>`
   /// - Parameter data: 需要转换的数据
-  /// - Returns: 转换后的Map<String, dynamic>
+  /// - Returns: 转换后的`Map<String, dynamic>`
   Map<String, dynamic> _convertToStringDynamicMap(dynamic data) {
     if (data is Map) {
       final Map<String, dynamic> result = {};
