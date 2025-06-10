@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin.dart';
+import 'package:rectangle_detector/rectangle_detector.dart';
 
 /// 矩形检测插件使用示例
 void main() async {
-  final plugin = RectangleDetectorPlugin();
+  final plugin = RectangleDetector();
   
   // 示例：从文件读取图片
   // final file = File('path/to/your/image.jpg');
@@ -44,7 +44,7 @@ void main() async {
 /// ```dart
 /// import 'package:flutter/material.dart';
 /// import 'package:image_picker/image_picker.dart';
-/// import 'package:rectangle_detector_plugin/rectangle_detector_plugin.dart';
+/// import 'package:rectangle_detector/rectangle_detector.dart';
 /// 
 /// class RectangleDetectionPage extends StatefulWidget {
 ///   @override
@@ -52,7 +52,7 @@ void main() async {
 /// }
 /// 
 /// class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
-///   final _plugin = RectangleDetectorPlugin();
+///   final _plugin = RectangleDetector();
 ///   RectangleFeature? _detectedRectangle;
 ///   
 ///   Future<void> _pickAndDetectImage() async {

@@ -1,4 +1,4 @@
-package com.example.rectangle_detector_plugin
+package com.example.rectangle_detector
 
 import android.graphics.Bitmap
 import android.util.Log

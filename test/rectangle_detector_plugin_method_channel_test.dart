@@ -1,12 +1,12 @@
+import 'package:rectangle_detector/rectangle_detector_method_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin_method_channel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelRectangleDetectorPlugin platform = MethodChannelRectangleDetectorPlugin();
-  const MethodChannel channel = MethodChannel('rectangle_detector_plugin');
+  MethodChannelRectangleDetector platform = MethodChannelRectangleDetector();
+  const MethodChannel channel = MethodChannel('rectangle_detector');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(

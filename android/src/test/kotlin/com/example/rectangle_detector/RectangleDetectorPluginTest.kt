@@ -1,4 +1,4 @@
-package com.example.rectangle_detector_plugin
+package com.example.rectangle_detector
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

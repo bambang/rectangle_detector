@@ -1,4 +1,4 @@
-package com.example.rectangle_detector_plugin
+package com.example.rectangle_detector
 
 import android.content.Context
 import android.util.Log

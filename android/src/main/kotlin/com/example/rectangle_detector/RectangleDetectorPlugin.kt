@@ -1,4 +1,4 @@
-package com.example.rectangle_detector_plugin
+package com.example.rectangle_detector
 
 import android.content.Context
 import android.util.Log
@@ -37,7 +37,7 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
    * 设置方法通道并初始化OpenCV
    */
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "rectangle_detector_plugin")
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "rectangle_detector")
     channel.setMethodCallHandler(this)
     context = flutterPluginBinding.applicationContext
     

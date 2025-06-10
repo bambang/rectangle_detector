@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin.dart';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin_platform_interface.dart';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin_method_channel.dart';
+import 'package:rectangle_detector/rectangle_detector.dart';
+import 'package:rectangle_detector/rectangle_detector_platform_interface.dart';
+import 'package:rectangle_detector/rectangle_detector_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 /// Mock平台实现类，用于测试
-class MockRectangleDetectorPluginPlatform
+class MockRectangleDetectorPlatform
     with MockPlatformInterfaceMixin
-    implements RectangleDetectorPluginPlatform {
+    implements RectangleDetectorPlatform {
 
   /// 获取平台版本信息
   @override
@@ -48,30 +48,30 @@ class MockRectangleDetectorPluginPlatform
 }
 
 void main() {
-  final RectangleDetectorPluginPlatform initialPlatform = RectangleDetectorPluginPlatform.instance;
+  final RectangleDetectorPlatform initialPlatform = RectangleDetectorPlatform.instance;
 
-  test('$MethodChannelRectangleDetectorPlugin is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelRectangleDetectorPlugin>());
+  test('$MethodChannelRectangleDetector is the default instance', () {
+    expect(initialPlatform, isInstanceOf<MethodChannelRectangleDetector>());
   });
 
   test('getPlatformVersion', () async {
-    RectangleDetectorPlugin rectangleDetectorPlugin = RectangleDetectorPlugin();
-    MockRectangleDetectorPluginPlatform fakePlatform = MockRectangleDetectorPluginPlatform();
-    RectangleDetectorPluginPlatform.instance = fakePlatform;
+    RectangleDetector rectangleDetector = RectangleDetector();
+    MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
+    RectangleDetectorPlatform.instance = fakePlatform;
 
-    expect(await rectangleDetectorPlugin.getPlatformVersion(), '42');
+    expect(await rectangleDetector.getPlatformVersion(), '42');
   });
   
   /// 测试单个矩形检测功能
   test('detectRectangle returns valid rectangle', () async {
-    RectangleDetectorPlugin rectangleDetectorPlugin = RectangleDetectorPlugin();
-    MockRectangleDetectorPluginPlatform fakePlatform = MockRectangleDetectorPluginPlatform();
-    RectangleDetectorPluginPlatform.instance = fakePlatform;
+    RectangleDetector rectangleDetector = RectangleDetector();
+    MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
+    RectangleDetectorPlatform.instance = fakePlatform;
     
     // 创建测试用的图片数据
     final Uint8List testImageData = Uint8List.fromList([1, 2, 3, 4]);
     
-    final result = await rectangleDetectorPlugin.detectRectangle(testImageData);
+    final result = await rectangleDetector.detectRectangle(testImageData);
     
     expect(result, isNotNull);
     expect(result!.topLeft.x, equals(10.0));
@@ -83,14 +83,14 @@ void main() {
   
   /// 测试多个矩形检测功能
   test('detectAllRectangles returns list of rectangles', () async {
-    RectangleDetectorPlugin rectangleDetectorPlugin = RectangleDetectorPlugin();
-    MockRectangleDetectorPluginPlatform fakePlatform = MockRectangleDetectorPluginPlatform();
-    RectangleDetectorPluginPlatform.instance = fakePlatform;
+    RectangleDetector rectangleDetector = RectangleDetector();
+    MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
+    RectangleDetectorPlatform.instance = fakePlatform;
     
     // 创建测试用的图片数据
     final Uint8List testImageData = Uint8List.fromList([1, 2, 3, 4]);
     
-    final results = await rectangleDetectorPlugin.detectAllRectangles(testImageData);
+    final results = await rectangleDetector.detectAllRectangles(testImageData);
     
     expect(results, isNotNull);
     expect(results.length, equals(2));

@@ -1,7 +1,7 @@
 
 import 'dart:math' show Point;
 import 'dart:typed_data';
-import 'rectangle_detector_plugin_platform_interface.dart';
+import 'rectangle_detector_platform_interface.dart';
 
 /// 矩形特征点类
 class RectangleFeature {
@@ -38,27 +38,27 @@ class RectangleFeature {
   }
 }
 
-class RectangleDetectorPlugin {
+class RectangleDetector {
   Future<String?> getPlatformVersion() {
-    return RectangleDetectorPluginPlatform.instance.getPlatformVersion();
+    return RectangleDetectorPlatform.instance.getPlatformVersion();
   }
   
-  /// 检测图片中最大的矩形并返回四个顶点坐标
-  /// - Parameter imageData: 图片的字节数据
-  /// - Returns: 包含四个顶点坐标的RectangleFeature对象，如果未检测到矩形则返回null
+  /// 检测图像中的矩形并返回最大的矩形特征点
+  /// 
+  /// [imageData] 图像的字节数据
+  /// 返回包含矩形特征点的RectangleFeature对象，如果没有检测到矩形则返回null
   Future<RectangleFeature?> detectRectangle(Uint8List imageData) async {
-    final result = await RectangleDetectorPluginPlatform.instance.detectRectangle(imageData);
-    if (result != null) {
-      return RectangleFeature.fromMap(result);
-    }
-    return null;
+    final result = await RectangleDetectorPlatform.instance.detectRectangle(imageData);
+    if (result == null) return null;
+    return RectangleFeature.fromMap(result);
   }
   
-  /// 检测图片中所有矩形并返回四个顶点坐标
-  /// - Parameter imageData: 图片的字节数据
-  /// - Returns: 包含所有矩形顶点坐标的List
+  /// 检测图像中的所有矩形并返回矩形特征点列表
+  /// 
+  /// [imageData] 图像的字节数据
+  /// 返回包含所有矩形特征点的RectangleFeature对象列表
   Future<List<RectangleFeature>> detectAllRectangles(Uint8List imageData) async {
-    final results = await RectangleDetectorPluginPlatform.instance.detectAllRectangles(imageData);
+    final results = await RectangleDetectorPlatform.instance.detectAllRectangles(imageData);
     return results.map((result) => RectangleFeature.fromMap(result)).toList();
   }
 }

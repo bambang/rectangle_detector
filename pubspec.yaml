@@ -1,5 +1,5 @@
-name: rectangle_detector_plugin
-description: "A new Flutter plugin project."
+name: rectangle_detector
+description: "基于原生提供矩形特征点识别功能的Dart插件"
 version: 0.0.1
 homepage:
 
@@ -35,7 +35,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.rectangle_detector_plugin
+        package: com.example.rectangle_detector
         pluginClass: RectangleDetectorPlugin
       ios:
         pluginClass: RectangleDetectorPlugin

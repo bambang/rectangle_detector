@@ -1,25 +1,25 @@
 import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'rectangle_detector_plugin_method_channel.dart';
+import 'rectangle_detector_method_channel.dart';
 
-abstract class RectangleDetectorPluginPlatform extends PlatformInterface {
-  /// Constructs a RectangleDetectorPluginPlatform.
-  RectangleDetectorPluginPlatform() : super(token: _token);
+abstract class RectangleDetectorPlatform extends PlatformInterface {
+  /// Constructs a RectangleDetectorPlatform.
+  RectangleDetectorPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static RectangleDetectorPluginPlatform _instance = MethodChannelRectangleDetectorPlugin();
+  static RectangleDetectorPlatform _instance = MethodChannelRectangleDetector();
 
-  /// The default instance of [RectangleDetectorPluginPlatform] to use.
+  /// The default instance of [RectangleDetectorPlatform] to use.
   ///
-  /// Defaults to [MethodChannelRectangleDetectorPlugin].
-  static RectangleDetectorPluginPlatform get instance => _instance;
+  /// Defaults to [MethodChannelRectangleDetector].
+  static RectangleDetectorPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [RectangleDetectorPluginPlatform] when
+  /// platform-specific class that extends [RectangleDetectorPlatform] when
   /// they register themselves.
-  static set instance(RectangleDetectorPluginPlatform instance) {
+  static set instance(RectangleDetectorPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

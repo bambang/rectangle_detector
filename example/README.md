@@ -1,6 +1,6 @@
-# rectangle_detector_plugin_example
+# rectangle_detector_example
 
-Demonstrates how to use the rectangle_detector_plugin plugin.
+Demonstrates how to use the rectangle_detector plugin.
 
 ## Getting Started
 

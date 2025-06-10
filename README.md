@@ -1,4 +1,4 @@
-# rectangle_detector_plugin
+# rectangle_detector
 
 A new Flutter plugin project.
 

@@ -1,7 +1,7 @@
-package com.example.rectangle_detector_plugin
+package com.example.rectangle_detector
 
 import android.util.Log
-import com.example.rectangle_detector_plugin.BuildConfig
+import com.example.rectangle_detector.BuildConfig
 
 /**
  * 调试日志工具类

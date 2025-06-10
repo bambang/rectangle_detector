@@ -3,7 +3,7 @@ import UIKit
 
 public class RectangleDetectorPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "rectangle_detector_plugin", binaryMessenger: registrar.messenger())
+    let channel = FlutterMethodChannel(name: "rectangle_detector", binaryMessenger: registrar.messenger())
     let instance = RectangleDetectorPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }

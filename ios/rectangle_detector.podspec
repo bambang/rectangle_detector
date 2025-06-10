@@ -1,11 +1,11 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint rectangle_detector_plugin.podspec` to validate before publishing.
+# Run `pod lib lint rectangle_detector.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'rectangle_detector_plugin'
+  s.name             = 'rectangle_detector'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.summary          = '基于Vision提供矩形识别功能'
   s.description      = <<-DESC
 A new Flutter plugin project.
                        DESC

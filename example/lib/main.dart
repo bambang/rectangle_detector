@@ -7,7 +7,7 @@ import 'dart:math' show Point;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rectangle_detector_plugin/rectangle_detector_plugin.dart';
+import 'package:rectangle_detector/rectangle_detector.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() {
@@ -37,7 +37,7 @@ class RectangleDetectorDemo extends StatefulWidget {
 }
 
 class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
-  final _rectangleDetectorPlugin = RectangleDetectorPlugin();
+  final _rectangleDetector = RectangleDetector();
   List<RectangleFeature> _detectedRectangles = [];
   bool _isDetecting = false;
   ui.Image? _image;
@@ -141,7 +141,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
       final Uint8List imageBytes = byteData.buffer.asUint8List();
       
       // 调用插件检测矩形
-       final List<RectangleFeature> rectangles = await _rectangleDetectorPlugin.detectAllRectangles(imageBytes);
+       final List<RectangleFeature> rectangles = await _rectangleDetector.detectAllRectangles(imageBytes);
       
       if (rectangles.isNotEmpty) {
         setState(() {
