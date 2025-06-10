@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
 
@@ -54,7 +55,7 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       
       return _convertJSObjectToMap(result);
     } catch (e) {
-      print('Web 矩形检测错误: \$e');
+      debugPrint('Web 矩形检测错误: \$e');
       return null;
     }
   }
@@ -78,7 +79,7 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       // 转换 JavaScript 数组为 Dart List
       return _convertJSArrayToList(result);
     } catch (e) {
-      print('Web 所有矩形检测错误: \$e');
+      debugPrint('Web 所有矩形检测错误: \$e');
       return <Map<String, dynamic>>[];
     }
   }
@@ -198,7 +199,7 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       
       return result;
     } catch (e) {
-      print('JavaScript 对象转换错误: \$e');
+      debugPrint('JavaScript 对象转换错误: \$e');
       return <String, dynamic>{};
     }
   }
@@ -220,7 +221,7 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       
       return result;
     } catch (e) {
-      print('JavaScript 数组转换错误: \$e');
+      debugPrint('JavaScript 数组转换错误: \$e');
       return <Map<String, dynamic>>[];
     }
   }
