@@ -95,30 +95,7 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
       val rectangle = rectangleDetector.detectRectangle(bitmap)
       bitmap.recycle()
       
-      if (rectangle != null && rectangle.size == 4) {
-        // 按照iOS端的格式返回数据：topLeft, topRight, bottomRight, bottomLeft
-        val rectangleData = mapOf(
-          "topLeft" to mapOf(
-            "x" to rectangle[0].x,
-            "y" to rectangle[0].y
-          ),
-          "topRight" to mapOf(
-            "x" to rectangle[1].x,
-            "y" to rectangle[1].y
-          ),
-          "bottomRight" to mapOf(
-            "x" to rectangle[2].x,
-            "y" to rectangle[2].y
-          ),
-          "bottomLeft" to mapOf(
-            "x" to rectangle[3].x,
-            "y" to rectangle[3].y
-          )
-        )
-        result.success(rectangleData)
-      } else {
-        result.success(null)
-      }
+      result.success(rectangle)
     } catch (e: Exception) {
       Log.e(TAG, "Error detecting rectangle", e)
       result.error("DETECTION_ERROR", "Failed to detect rectangle: ${e.message}", null)
@@ -147,32 +124,7 @@ class RectangleDetectorPlugin: FlutterPlugin, MethodCallHandler {
       val rectangles = rectangleDetector.detectAllRectangles(bitmap)
       bitmap.recycle()
       
-      val result_data = rectangles.mapNotNull { rectangle ->
-        if (rectangle.size == 4) {
-          mapOf(
-            "topLeft" to mapOf(
-              "x" to rectangle[0].x,
-              "y" to rectangle[0].y
-            ),
-            "topRight" to mapOf(
-              "x" to rectangle[1].x,
-              "y" to rectangle[1].y
-            ),
-            "bottomRight" to mapOf(
-              "x" to rectangle[2].x,
-              "y" to rectangle[2].y
-            ),
-            "bottomLeft" to mapOf(
-              "x" to rectangle[3].x,
-              "y" to rectangle[3].y
-            )
-          )
-        } else {
-          null
-        }
-      }
-      
-      result.success(result_data)
+      result.success(rectangles)
     } catch (e: Exception) {
       Log.e(TAG, "Error detecting rectangles", e)
       result.error("DETECTION_ERROR", "Failed to detect rectangles: ${e.message}", null)

@@ -2,8 +2,6 @@ package com.example.rectangle_detector_plugin
 
 import android.content.Context
 import android.util.Log
-import org.opencv.android.BaseLoaderCallback
-import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 
 /**
@@ -33,8 +31,8 @@ class OpenCVManager private constructor() {
     
     /**
      * 初始化OpenCV库
-     * 支持多个回调同时等待初始化结果，避免重复初始化
-     * @param context Android上下文
+     * 使用OpenCV 4.9.0+的新API进行初始化
+     * @param context Android上下文（保留参数以保持API兼容性）
      * @param callback 初始化结果回调，true表示成功，false表示失败
      */
     fun initialize(context: Context, callback: (Boolean) -> Unit) {
@@ -53,34 +51,33 @@ class OpenCVManager private constructor() {
             return
         }
         
-        Log.d(TAG, "Starting OpenCV initialization")
+        Log.d(TAG, "Starting OpenCV initialization using initLocal()")
         
-        val loaderCallback = object : BaseLoaderCallback(context) {
-            override fun onManagerConnected(status: Int) {
-                val success = status == LoaderCallbackInterface.SUCCESS
-                isInitialized = success
-                
-                if (success) {
-                    Log.d(TAG, "OpenCV loaded successfully")
-                } else {
-                    Log.e(TAG, "OpenCV initialization failed with status: $status")
-                }
-                
-                // 通知所有等待的回调
-                synchronized(initCallbacks) {
-                    initCallbacks.forEach { it(success) }
-                    initCallbacks.clear()
-                }
+        try {
+            // 使用新的OpenCV 4.9.0+ API进行初始化
+            val success = OpenCVLoader.initLocal()
+            isInitialized = success
+            
+            if (success) {
+                Log.d(TAG, "OpenCV loaded successfully using initLocal()")
+            } else {
+                Log.e(TAG, "OpenCV initialization failed")
             }
-        }
-        
-        // 尝试使用内置OpenCV库
-        if (!OpenCVLoader.initDebug()) {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization")
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, context, loaderCallback)
-        } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!")
-            loaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
+            
+            // 通知所有等待的回调
+            synchronized(initCallbacks) {
+                initCallbacks.forEach { it(success) }
+                initCallbacks.clear()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "OpenCV initialization exception: ${e.message}", e)
+            isInitialized = false
+            
+            // 通知所有等待的回调初始化失败
+            synchronized(initCallbacks) {
+                initCallbacks.forEach { it(false) }
+                initCallbacks.clear()
+            }
         }
     }
     

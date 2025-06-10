@@ -51,8 +51,8 @@ android {
         // Kotlin 标准库 - 提供 Kotlin 语言运行时支持
         implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
         
-        // 使用第三方OpenCV依赖，避免手动集成的复杂性
-        implementation 'com.quickbirdstudios:opencv:4.5.1'
+        // 使用官方OpenCV依赖 - 自4.9.0版本起官方提供Maven Central支持
+        implementation 'org.opencv:opencv:4.11.0'
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }

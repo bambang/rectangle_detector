@@ -6,6 +6,10 @@ import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import kotlin.math.abs
+import kotlin.math.sqrt
+import kotlin.math.pow
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * RectangleDetector
@@ -18,95 +22,15 @@ class RectangleDetector {
     }
     
     /**
-     * 检测图像中的矩形
+     * 检测图像中的单个最大矩形
      * @param bitmap 输入的图像
-     * @return 检测到的矩形顶点坐标，如果没有检测到则返回null
+     * @return 检测到的矩形顶点坐标，如果未检测到则返回null
      */
-    fun detectRectangle(bitmap: Bitmap): List<Point>? {
-        return try {
-            Log.d(TAG, "开始矩形检测，图像尺寸: ${bitmap.width}x${bitmap.height}")
-            
-            // 将Bitmap转换为OpenCV Mat
-            val mat = Mat()
-            Utils.bitmapToMat(bitmap, mat)
-            Log.d(TAG, "Bitmap转换为Mat完成，Mat尺寸: ${mat.rows()}x${mat.cols()}")
-            
-            // 转换为灰度图像
-            val grayMat = Mat()
-            Imgproc.cvtColor(mat, grayMat, Imgproc.COLOR_RGB2GRAY)
-            Log.d(TAG, "灰度转换完成")
-            
-            // 高斯模糊 - 减少噪声
-            val blurredMat = Mat()
-            Imgproc.GaussianBlur(grayMat, blurredMat, Size(5.0, 5.0), 0.0)
-            Log.d(TAG, "高斯模糊完成")
-            
-            // 自适应阈值处理 - 提高边缘检测效果
-            val threshMat = Mat()
-            Imgproc.adaptiveThreshold(
-                blurredMat, threshMat, 255.0,
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
-                Imgproc.THRESH_BINARY, 11, 2.0
-            )
-            Log.d(TAG, "自适应阈值处理完成")
-            
-            // Canny边缘检测 - 优化参数
-            val edgesMat = Mat()
-            Imgproc.Canny(threshMat, edgesMat, 30.0, 100.0, 3, false)
-            Log.d(TAG, "Canny边缘检测完成")
-            
-            // 形态学操作 - 连接断开的边缘
-            val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(3.0, 3.0))
-            val morphMat = Mat()
-            Imgproc.morphologyEx(edgesMat, morphMat, Imgproc.MORPH_CLOSE, kernel)
-            Log.d(TAG, "形态学操作完成")
-            
-            // 再次膨胀以加强边缘
-            val dilatedMat = Mat()
-            Imgproc.dilate(morphMat, dilatedMat, kernel, Point(-1.0, -1.0), 1)
-            Log.d(TAG, "膨胀操作完成")
-            
-            // 查找轮廓
-            val contours = mutableListOf<MatOfPoint>()
-            val hierarchy = Mat()
-            Imgproc.findContours(
-                dilatedMat,
-                contours,
-                hierarchy,
-                Imgproc.RETR_EXTERNAL,
-                Imgproc.CHAIN_APPROX_SIMPLE
-            )
-            Log.d(TAG, "找到 ${contours.size} 个轮廓")
-            
-            // 查找最大的四边形轮廓
-            val rectangle = findLargestRectangle(contours)
-            
-            if (rectangle != null) {
-                Log.d(TAG, "检测到矩形，顶点数: ${rectangle.size}")
-                rectangle.forEachIndexed { index, point ->
-                    Log.d(TAG, "顶点$index: (${point.x}, ${point.y})")
-                }
-            } else {
-                Log.w(TAG, "未检测到矩形")
-            }
-            
-            // 释放内存
-            mat.release()
-            grayMat.release()
-            blurredMat.release()
-            threshMat.release()
-            edgesMat.release()
-            morphMat.release()
-            dilatedMat.release()
-            hierarchy.release()
-            kernel.release()
-            contours.forEach { it.release() }
-            
-            rectangle
-        } catch (e: Exception) {
-            Log.e(TAG, "Rectangle detection failed", e)
-            null
-        }
+    fun detectRectangle(bitmap: Bitmap): Map<String, Any>? {
+        val allRectangles = detectAllRectangles(bitmap)
+        
+        // 选择评分最高的矩形
+        return allRectangles.firstOrNull() // 已经按评分排序，第一个就是最好的
     }
     
     /**
@@ -114,259 +38,184 @@ class RectangleDetector {
      * @param bitmap 输入的图像
      * @return 检测到的所有矩形顶点坐标列表
      */
-    fun detectAllRectangles(bitmap: Bitmap): List<List<Point>> {
+    fun detectAllRectangles(bitmap: Bitmap): List<Map<String, Any>> {
         return try {
-            // 将Bitmap转换为OpenCV Mat
-            val mat = Mat()
-            Utils.bitmapToMat(bitmap, mat)
+            val contours = preprocessImageAndFindContours(bitmap)
+            val imageSize = Size(bitmap.width.toDouble(), bitmap.height.toDouble())
+            val candidates = findValidRectangles(contours, imageSize)
             
-            // 转换为灰度图像
-            val grayMat = Mat()
-            Imgproc.cvtColor(mat, grayMat, Imgproc.COLOR_RGB2GRAY)
+            // 按评分排序，评分高的在前
+            val sortedCandidates = candidates.sortedByDescending { it.second }
             
-            // 高斯模糊 - 减少噪声
-            val blurredMat = Mat()
-            Imgproc.GaussianBlur(grayMat, blurredMat, Size(5.0, 5.0), 0.0)
+            Log.i(TAG, "Found ${sortedCandidates.size} rectangle candidates")
             
-            // 自适应阈值处理 - 提高边缘检测效果
-            val threshMat = Mat()
-            Imgproc.adaptiveThreshold(
-                blurredMat, threshMat, 255.0,
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
-                Imgproc.THRESH_BINARY, 11, 2.0
-            )
-            
-            // Canny边缘检测 - 优化参数
-            val edgesMat = Mat()
-            Imgproc.Canny(threshMat, edgesMat, 30.0, 100.0, 3, false)
-            
-            // 形态学操作 - 连接断开的边缘
-            val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(3.0, 3.0))
-            val morphMat = Mat()
-            Imgproc.morphologyEx(edgesMat, morphMat, Imgproc.MORPH_CLOSE, kernel)
-            
-            // 再次膨胀以加强边缘
-            val dilatedMat = Mat()
-            Imgproc.dilate(morphMat, dilatedMat, kernel, Point(-1.0, -1.0), 1)
-            
-            // 查找轮廓
-            val contours = mutableListOf<MatOfPoint>()
-            val hierarchy = Mat()
-            Imgproc.findContours(
-                dilatedMat,
-                contours,
-                hierarchy,
-                Imgproc.RETR_EXTERNAL,
-                Imgproc.CHAIN_APPROX_SIMPLE
-            )
-            
-            // 查找所有四边形轮廓
-            val rectangles = findAllRectangles(contours)
-            
-            // 释放内存
-            mat.release()
-            grayMat.release()
-            blurredMat.release()
-            threshMat.release()
-            edgesMat.release()
-            morphMat.release()
-            dilatedMat.release()
-            hierarchy.release()
-            kernel.release()
-            contours.forEach { it.release() }
-            
-            rectangles
+            sortedCandidates.map { (rectangle, score) ->
+                mapOf(
+                    "topLeft" to mapOf("x" to rectangle[0].x, "y" to rectangle[0].y),
+                    "topRight" to mapOf("x" to rectangle[1].x, "y" to rectangle[1].y),
+                    "bottomRight" to mapOf("x" to rectangle[2].x, "y" to rectangle[2].y),
+                    "bottomLeft" to mapOf("x" to rectangle[3].x, "y" to rectangle[3].y),
+                    "score" to score
+                )
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "All rectangles detection failed", e)
+            Log.e(TAG, "Rectangle detection failed", e)
             emptyList()
         }
     }
     
     /**
-     * 查找最大的矩形轮廓
+     * 预处理图像并查找轮廓
+     * 完全按照PaperProcessor.kt中的findContours算法实现
      */
-    private fun findLargestRectangle(contours: List<MatOfPoint>): List<Point>? {
-        var largestArea = 0.0
-        var largestRectangle: List<Point>? = null
-        var validContours = 0
-        var rectangleContours = 0
+    private fun preprocessImageAndFindContours(bitmap: Bitmap): ArrayList<MatOfPoint> {
+        // 将Bitmap转换为OpenCV Mat
+        val src = Mat()
+        Utils.bitmapToMat(bitmap, src)
         
-        Log.d(TAG, "开始分析 ${contours.size} 个轮廓")
+        val grayImage: Mat
+        val cannedImage: Mat
+        // 使用不同大小的核进行形态学操作
+        val smallKernel: Mat = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(3.0, 3.0))
+        val largeKernel: Mat = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(7.0, 7.0))
+        val dilate: Mat
+        val size = Size(src.size().width, src.size().height)
+        grayImage = Mat(size, CvType.CV_8UC4)
+        cannedImage = Mat(size, CvType.CV_8UC1)
+        dilate = Mat(size, CvType.CV_8UC1)
+
+        // 简化预处理：保持基础但有效的边缘检测
+        Imgproc.cvtColor(src, grayImage, Imgproc.COLOR_BGR2GRAY)
         
-        for ((index, contour) in contours.withIndex()) {
+        // 轻微高斯模糊去噪，保留边缘信息
+        Imgproc.GaussianBlur(grayImage, grayImage, Size(3.0, 3.0), 0.0)
+        
+        // 直接使用Canny边缘检测，使用经典参数
+        Imgproc.Canny(grayImage, cannedImage, 50.0, 150.0)
+        
+        // 轻微膨胀操作，连接断开的边缘
+        Imgproc.dilate(cannedImage, dilate, smallKernel)
+        
+        val contours = ArrayList<MatOfPoint>()
+        val hierarchy = Mat()
+        Imgproc.findContours(dilate, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE)
+        
+        Log.i(TAG, "Found ${contours.size} contours")
+        
+        // 简化轮廓过滤：只排除明显过大或过小的轮廓
+        val imageArea = size.width * size.height
+        val filteredContours = contours.filter { contour ->
             val area = Imgproc.contourArea(contour)
-            Log.d(TAG, "轮廓$index: 面积=$area")
-            
-            // 过滤太小的轮廓（降低阈值）
-            if (area < 500) {
-                Log.d(TAG, "轮廓$index: 面积太小，跳过")
-                continue
-            }
-            
-            validContours++
-            Log.d(TAG, "轮廓$index: 面积符合要求，开始矩形近似")
-            
-            val rectangle = approximateToRectangle(contour)
-            if (rectangle != null) {
-                rectangleContours++
-                Log.d(TAG, "轮廓$index: 成功近似为矩形，面积=$area")
-                if (area > largestArea) {
-                    largestArea = area
-                    largestRectangle = rectangle
-                    Log.d(TAG, "轮廓$index: 更新为最大矩形")
+            val areaRatio = area / imageArea
+            // 保留合理大小的轮廓，排除整个图像边界和噪点
+            areaRatio in 0.01..0.8
+        }
+        
+        Log.i(TAG, "Original contours: ${contours.size}, Filtered contours: ${filteredContours.size}")
+        
+        val validContours = ArrayList(filteredContours)
+        validContours.sortByDescending { p: MatOfPoint -> Imgproc.contourArea(p) }
+        
+        // 释放所有Mat对象
+        hierarchy.release()
+        grayImage.release()
+        cannedImage.release()
+        smallKernel.release()
+        largeKernel.release()
+        dilate.release()
+        src.release()
+
+        return validContours
+    }
+    
+    /**
+     * 从轮廓中查找有效的矩形
+     * 完全按照PaperProcessor.kt中的getCorners算法实现
+     */
+    private fun findValidRectangles(contours: ArrayList<MatOfPoint>, imageSize: Size): List<Pair<List<Point>, Double>> {
+        val candidates = mutableListOf<Pair<List<Point>, Double>>()
+        val maxCandidates = minOf(contours.size, 30) // 增加到30个轮廓，扩大搜索范围
+        
+        Log.i(TAG, "Processing ${contours.size} contours, checking top $maxCandidates")
+        
+        for (index in 0 until maxCandidates) {
+            try {
+                val c2f = MatOfPoint2f(*contours[index].toArray())
+                val peri = Imgproc.arcLength(c2f, true)
+                val approx = MatOfPoint2f()
+                
+                // 尝试多个近似参数，从严格到宽松，与PaperProcessor.kt保持一致
+                val epsilonValues = listOf(0.015, 0.02, 0.025, 0.03)
+                var foundQuad = false
+                
+                for (epsilon in epsilonValues) {
+                    Imgproc.approxPolyDP(c2f, approx, epsilon * peri, true)
+                    val points = approx.toArray().asList()
+                    
+                    Log.d(TAG, "Contour $index: epsilon=${epsilon}, points=${points.size}, area=${Imgproc.contourArea(c2f)}")
+                    
+                    // 检查是否为四边形
+                    if (points.size == 4) {
+                        val convex = MatOfPoint()
+                        approx.convertTo(convex, CvType.CV_32S)
+                        
+                        // 检查是否为凸四边形，但允许轻微的不规则
+                        val isConvex = Imgproc.isContourConvex(convex)
+                        Log.d(TAG, "Contour $index: epsilon=${epsilon}, convex check = $isConvex")
+                        
+                        // 对于纯矩形图案，放宽凸性检查，允许轻微的数值误差
+                        val shouldAccept = isConvex || (points.size == 4 && Imgproc.contourArea(approx) > imageSize.width * imageSize.height * 0.05)
+                        if (shouldAccept) { // 大面积四边形即使凸性检查略有问题也接受
+                            val sortedPoints = sortPoints(points)
+                            
+                            // 计算矩形度评分
+                            val score = calculateRectangleScore(sortedPoints, Imgproc.contourArea(approx), imageSize)
+                            candidates.add(Pair(sortedPoints, score))
+                            
+                            Log.i(TAG, "Found rectangle candidate $index: score = $score, convex = $isConvex, accepted = $shouldAccept")
+                            
+                            // 打印四个角的详细坐标
+                            Log.d(TAG, "检测到的四个角坐标:")
+                            sortedPoints.forEachIndexed { pointIndex, point ->
+                                Log.d(TAG, "角点 $pointIndex: (${point.x}, ${point.y})")
+                            }
+                            
+                            foundQuad = true
+                            break // 找到四边形就停止尝试其他epsilon值
+                        }
+                        convex.release()
+                    }
                 }
-            } else {
-                Log.d(TAG, "轮廓$index: 无法近似为矩形")
+                
+                if (!foundQuad) {
+                    Log.d(TAG, "Contour $index: no valid quadrilateral found")
+                }
+                
+                c2f.release()
+                approx.release()
+                
+            } catch (e: Exception) {
+                Log.w(TAG, "Error processing contour $index: ${e.message}")
             }
         }
         
-        Log.d(TAG, "轮廓分析完成: 总数=${contours.size}, 有效=${validContours}, 矩形=${rectangleContours}, 最大面积=$largestArea")
+        Log.i(TAG, "Total candidates found: ${candidates.size}")
         
-        return largestRectangle
+        return candidates
     }
     
-    /**
-     * 查找所有矩形轮廓
-     */
-    private fun findAllRectangles(contours: List<MatOfPoint>): List<List<Point>> {
-        val rectangles = mutableListOf<List<Point>>()
-        
-        for (contour in contours) {
-            val area = Imgproc.contourArea(contour)
-            
-            // 过滤太小的轮廓（降低阈值）
-            if (area < 500) continue
-            
-            val rectangle = approximateToRectangle(contour)
-            if (rectangle != null) {
-                rectangles.add(rectangle)
-            }
-        }
-        
-        // 按面积排序，最大的在前
-        return rectangles.sortedByDescending { calculateArea(it) }
-    }
-    
-    /**
-     * 将轮廓近似为矩形
-     */
-    private fun approximateToRectangle(contour: MatOfPoint): List<Point>? {
-        val contour2f = MatOfPoint2f()
-        contour.convertTo(contour2f, CvType.CV_32FC2)
-        
-        val approx = MatOfPoint2f()
-        val epsilon = 0.02 * Imgproc.arcLength(contour2f, true)
-        Imgproc.approxPolyDP(contour2f, approx, epsilon, true)
-        
-        val points = approx.toArray()
-        Log.d(TAG, "多边形近似结果: ${points.size} 个顶点")
-        
-        contour2f.release()
-        approx.release()
-        
-        // 检查是否为四边形
-        if (points.size == 4) {
-            Log.d(TAG, "检测到四边形，开始验证是否为有效矩形")
-            // 验证是否为有效的矩形（检查角度和边长比例）
-            if (isValidRectangle(points.toList())) {
-                Log.d(TAG, "四边形验证通过，排列顶点")
-                // 按顺序排列顶点：左上、右上、右下、左下
-                return sortRectanglePoints(points.toList())
-            } else {
-                Log.d(TAG, "四边形验证失败")
-            }
-        } else {
-            Log.d(TAG, "不是四边形，顶点数: ${points.size}")
-        }
-        
-        return null
-    }
-    
-    /**
-     * 验证是否为有效的矩形
-     * 使用更宽松的验证条件，确保能够检测到矩形
-     */
-    private fun isValidRectangle(points: List<Point>): Boolean {
-        if (points.size != 4) {
-            Log.d(TAG, "验证失败: 不是四边形，顶点数=${points.size}")
-            return false
-        }
-        
-        // 计算面积，过滤太小的形状（降低阈值）
-        val area = calculateArea(points)
-        Log.d(TAG, "四边形面积: $area")
-        if (area < 1000) {
-            Log.d(TAG, "验证失败: 面积太小 ($area < 1000)")
-            return false  // 降低最小面积阈值
-        }
-        
-        // 计算所有边的长度
-        val sides = mutableListOf<Double>()
-        for (i in points.indices) {
-            val p1 = points[i]
-            val p2 = points[(i + 1) % 4]
-            val distance = kotlin.math.sqrt(
-                (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y)
-            )
-            sides.add(distance)
-        }
-        Log.d(TAG, "边长: ${sides.joinToString(", ") { "%.2f".format(it) }}")
-        
-        // 检查是否有边长过短（降低阈值）
-        val minSideLength = 20.0  // 降低最小边长要求
-        val shortSides = sides.filter { it < minSideLength }
-        if (shortSides.isNotEmpty()) {
-            Log.d(TAG, "验证失败: 存在过短边长 ${shortSides.joinToString(", ") { "%.2f".format(it) }} (< $minSideLength)")
-            return false
-        }
-        
-        // 检查宽高比是否合理（放宽限制）
-        val maxSide = sides.maxOrNull() ?: 0.0
-        val minSide = sides.minOrNull() ?: 0.0
-        val aspectRatio = maxSide / minSide
-        Log.d(TAG, "宽高比: %.2f (最大边=%.2f, 最小边=%.2f)".format(aspectRatio, maxSide, minSide))
-        if (aspectRatio > 20.0) {
-            Log.d(TAG, "验证失败: 宽高比过大 ($aspectRatio > 20.0)")
-            return false  // 放宽宽高比限制
-        }
-        
-        // 基本的四边形验证，不进行严格的矩形验证
-        // 只检查是否为凸四边形
-        val isConvex = isConvexQuadrilateral(points)
-        Log.d(TAG, "凸四边形检查: $isConvex")
-        if (!isConvex) {
-            Log.d(TAG, "验证失败: 不是凸四边形")
-            return false
-        }
-        
-        Log.d(TAG, "验证成功: 所有条件都满足")
-        return true
-    }
+
     
     /**
      * 按顺序排列矩形顶点：左上、右上、右下、左下
-     * 使用更可靠的几何方法来识别四个角点
+     * 完全按照PaperProcessor.kt中的sortPoints算法实现
      */
-    private fun sortRectanglePoints(points: List<Point>): List<Point> {
-        if (points.size != 4) return points
-        
-        // 按y坐标排序，分为上下两组
-        val sortedByY = points.sortedBy { it.y }
-        val topPoints = sortedByY.take(2)  // y值较小的两个点（上方）
-        val bottomPoints = sortedByY.drop(2)  // y值较大的两个点（下方）
-        
-        // 在上方两点中，按x坐标排序确定左上和右上
-        val topSorted = topPoints.sortedBy { it.x }
-        val topLeft = topSorted[0]     // x值较小的为左上
-        val topRight = topSorted[1]    // x值较大的为右上
-        
-        // 在下方两点中，按x坐标排序确定左下和右下
-        val bottomSorted = bottomPoints.sortedBy { it.x }
-        val bottomLeft = bottomSorted[0]   // x值较小的为左下
-        val bottomRight = bottomSorted[1]  // x值较大的为右下
-        
-        // 返回按照topLeft, topRight, bottomRight, bottomLeft的顺序
-        return listOf(topLeft, topRight, bottomRight, bottomLeft)
+    private fun sortPoints(points: List<Point>): List<Point> {
+        val p0 = points.minBy { point -> point.x + point.y } ?: Point()
+        val p1 = points.minBy { point -> point.y - point.x } ?: Point()
+        val p2 = points.maxBy { point -> point.x + point.y } ?: Point()
+        val p3 = points.maxBy { point -> point.y - point.x } ?: Point()
+        return listOf(p0, p1, p2, p3)
     }
     
     /**
@@ -382,6 +231,74 @@ class RectangleDetector {
             area -= points[j].x * points[i].y
         }
         return abs(area) / 2.0
+    }
+    
+    /**
+     * 计算矩形质量评分
+     * 完全按照PaperProcessor.kt中的calculateRectangleScore算法实现
+     */
+    private fun calculateRectangleScore(points: List<Point>, area: Double, imageSize: Size): Double {
+        val tl = points[0]
+        val tr = points[1] 
+        val br = points[2]
+        val bl = points[3]
+        
+        // 计算四边长度
+        val topWidth = sqrt((tr.x - tl.x).pow(2.0) + (tr.y - tl.y).pow(2.0))
+        val bottomWidth = sqrt((br.x - bl.x).pow(2.0) + (br.y - bl.y).pow(2.0))
+        val leftHeight = sqrt((bl.x - tl.x).pow(2.0) + (bl.y - tl.y).pow(2.0))
+        val rightHeight = sqrt((br.x - tr.x).pow(2.0) + (br.y - tr.y).pow(2.0))
+        
+        // 1. 面积评分 (强烈优先大面积，大幅降低小面积评分)
+        val imageArea = imageSize.width * imageSize.height
+        val areaRatio = area / imageArea
+        val areaScore = when {
+            areaRatio >= 0.2 -> 1.0         // 大面积优先，降低阈值
+            areaRatio in 0.1..0.2 -> 0.8    // 中等面积
+            areaRatio in 0.05..0.1 -> 0.4   // 较小面积，大幅降分
+            areaRatio in 0.02..0.05 -> 0.1  // 小面积，严重降分
+            else -> 0.01                    // 极小面积，几乎零分
+        }
+        
+        // 2. 基本形状评分 (极度宽松的长宽比要求)
+        val avgWidth = (topWidth + bottomWidth) / 2.0
+        val avgHeight = (leftHeight + rightHeight) / 2.0
+        val aspectRatio = max(avgWidth, avgHeight) / min(avgWidth, avgHeight)
+        val aspectScore = when {
+            aspectRatio <= 3.0 -> 1.0       // 长宽比不超过3:1都可以接受
+            aspectRatio <= 5.0 -> 0.9       // 稍长的矩形
+            aspectRatio <= 8.0 -> 0.8       // 较长的矩形
+            aspectRatio <= 12.0 -> 0.7      // 很长的矩形
+            else -> 0.6                     // 极度狭长，但仍给予较高分数
+        }
+        
+        // 3. 边长一致性评分 (降低严格要求，允许透视变形)
+        val widthConsistency = 1.0 - min(0.5, abs(topWidth - bottomWidth) / max(topWidth, bottomWidth))
+        val heightConsistency = 1.0 - min(0.5, abs(leftHeight - rightHeight) / max(leftHeight, rightHeight))
+        val edgeScore = (widthConsistency + heightConsistency) / 2.0
+        
+        // 4. 位置评分 (中心位置优先，但权重较低)
+        val centerX = (tl.x + tr.x + bl.x + br.x) / 4.0
+        val centerY = (tl.y + tr.y + bl.y + br.y) / 4.0
+        val imageCenterX = imageSize.width / 2.0
+        val imageCenterY = imageSize.height / 2.0
+        val distanceFromCenter = sqrt((centerX - imageCenterX).pow(2.0) + (centerY - imageCenterY).pow(2.0))
+        val maxDistance = sqrt(imageCenterX.pow(2.0) + imageCenterY.pow(2.0))
+        val positionScore = 1.0 - (distanceFromCenter / maxDistance)
+        
+        // 面积加分机制：大面积四边形获得额外加分
+        val areaBonus = if (areaRatio >= 0.15) {
+            (areaRatio - 0.15) * 2.0  // 面积越大，额外加分越多
+        } else {
+            0.0
+        }
+        
+        // 综合评分 (面积权重绝对主导，大面积获得额外加分)
+        val totalScore = areaScore * 0.8 + aspectScore * 0.1 + edgeScore * 0.05 + positionScore * 0.05 + areaBonus
+        
+        Log.i(TAG, "Rectangle score breakdown: area=$areaScore (ratio=$areaRatio), aspect=$aspectScore (ratio=$aspectRatio), edge=$edgeScore, position=$positionScore, areaBonus=$areaBonus, total=$totalScore")
+        
+        return totalScore
     }
     
     /**
