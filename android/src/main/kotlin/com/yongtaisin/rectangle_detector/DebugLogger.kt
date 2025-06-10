@@ -1,7 +1,7 @@
 package com.yongtaisin.rectangle_detector
 
 import android.util.Log
-import com.example.rectangle_detector.BuildConfig
+import com.yongtaisin.rectangle_detector.BuildConfig
 
 /**
  * 调试日志工具类
