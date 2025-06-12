@@ -1,3 +1,11 @@
+## 1.0.1
+
+### 🔧 Bug Fixes
+
+* Fixed pub.dev scoring issues
+* Improved code formatting and documentation
+* Enhanced Swift Package Manager support
+
 ## 1.0.0
 
 ### 🎉 Major Updates
