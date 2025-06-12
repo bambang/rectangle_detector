@@ -11,28 +11,30 @@ class MethodChannelRectangleDetector extends RectangleDetectorPlatform {
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version = await methodChannel.invokeMethod<String>(
+      'getPlatformVersion',
+    );
     return version;
   }
-  
+
   @override
   Future<Map<String, dynamic>?> detectRectangle(Uint8List imageData) async {
-    final result = await methodChannel.invokeMethod(
-      'detectRectangle',
-      {'imageData': imageData},
-    );
+    final result = await methodChannel.invokeMethod('detectRectangle', {
+      'imageData': imageData,
+    });
     if (result == null) return null;
     return _convertToStringDynamicMap(result);
   }
-  
+
   @override
-  Future<List<Map<String, dynamic>>> detectAllRectangles(Uint8List imageData) async {
-    final result = await methodChannel.invokeMethod(
-      'detectAllRectangles',
-      {'imageData': imageData},
-    );
+  Future<List<Map<String, dynamic>>> detectAllRectangles(
+    Uint8List imageData,
+  ) async {
+    final result = await methodChannel.invokeMethod('detectAllRectangles', {
+      'imageData': imageData,
+    });
     if (result == null) return [];
-    
+
     if (result is List) {
       return result.map<Map<String, dynamic>>((item) {
         return _convertToStringDynamicMap(item);
@@ -40,7 +42,7 @@ class MethodChannelRectangleDetector extends RectangleDetectorPlatform {
     }
     return [];
   }
-  
+
   /// 递归转换`Map<Object?, Object?>`为`Map<String, dynamic>`
   /// - Parameter data: 需要转换的数据
   /// - Returns: 转换后的`Map<String, dynamic>`

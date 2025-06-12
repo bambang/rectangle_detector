@@ -27,14 +27,14 @@ abstract class RectangleDetectorPlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
-  
+
   /// 检测图片中最大的矩形并返回四个顶点坐标
   /// - Parameter imageData: 图片的字节数据
   /// - Returns: 包含四个顶点坐标的Map，如果未检测到矩形则返回null
   Future<Map<String, dynamic>?> detectRectangle(Uint8List imageData) {
     throw UnimplementedError('detectRectangle() has not been implemented.');
   }
-  
+
   /// 检测图片中所有矩形并返回四个顶点坐标
   /// - Parameter imageData: 图片的字节数据
   /// - Returns: 包含所有矩形顶点坐标的List

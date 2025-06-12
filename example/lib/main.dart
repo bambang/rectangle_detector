@@ -18,9 +18,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Rectangle Detector Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const RectangleDetectorDemo(),
     );
   }
@@ -49,18 +47,18 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
     super.initState();
     _loadDefaultImage();
   }
-  
+
   /// 加载默认测试图片
   Future<void> _loadDefaultImage() async {
     try {
       // 从assets加载默认图片
       final ByteData data = await rootBundle.load('assets/images/tv.jpeg');
       final Uint8List bytes = data.buffer.asUint8List();
-      
+
       // 解码图片
       final ui.Codec codec = await ui.instantiateImageCodec(bytes);
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
-      
+
       setState(() {
         _image = frameInfo.image;
         _imageWidth = frameInfo.image.width.toDouble();
@@ -81,19 +79,19 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 3840,  // 4K分辨率
+        maxWidth: 3840, // 4K分辨率
         maxHeight: 3840,
         imageQuality: 100,
       );
-      
+
       if (pickedFile != null) {
         // 使用 XFile 的 readAsBytes 方法，兼容 Web 平台
         final Uint8List bytes = await pickedFile.readAsBytes();
-        
+
         // 解码图片
         final ui.Codec codec = await ui.instantiateImageCodec(bytes);
         final ui.FrameInfo frameInfo = await codec.getNextFrame();
-        
+
         setState(() {
           _image = frameInfo.image;
           _imageWidth = frameInfo.image.width.toDouble();
@@ -117,7 +115,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
       });
       return;
     }
-    
+
     setState(() {
       _isDetecting = true;
       _statusMessage = '正在检测矩形...';
@@ -125,7 +123,9 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
 
     try {
       // 将图片转换为字节数组
-      final ByteData? byteData = await _image!.toByteData(format: ui.ImageByteFormat.png);
+      final ByteData? byteData = await _image!.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
       if (byteData == null) {
         setState(() {
           _isDetecting = false;
@@ -133,23 +133,28 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         });
         return;
       }
-      
+
       final Uint8List imageBytes = byteData.buffer.asUint8List();
-      
+
       // 调用插件检测矩形
-       final List<RectangleFeature> rectangles = await RectangleDetector.detectAllRectangles(imageBytes);
-      
+      final List<RectangleFeature> rectangles =
+          await RectangleDetector.detectAllRectangles(imageBytes);
+
       if (rectangles.isNotEmpty) {
         setState(() {
           _detectedRectangles = rectangles;
           _isDetecting = false;
-          _statusMessage = '检测到 ${rectangles.length} 个矩形:\n' +
-              rectangles.map((rectangle) => 
-                'TL: (${rectangle.topLeft.x.toStringAsFixed(1)}, ${rectangle.topLeft.y.toStringAsFixed(1)})\n' +
-                'TR: (${rectangle.topRight.x.toStringAsFixed(1)}, ${rectangle.topRight.y.toStringAsFixed(1)})\n' +
-                'BL: (${rectangle.bottomLeft.x.toStringAsFixed(1)}, ${rectangle.bottomLeft.y.toStringAsFixed(1)})\n' +
-                'BR: (${rectangle.bottomRight.x.toStringAsFixed(1)}, ${rectangle.bottomRight.y.toStringAsFixed(1)})'
-              ).join('\n\n');
+          _statusMessage =
+              '检测到 ${rectangles.length} 个矩形:\n' +
+              rectangles
+                  .map(
+                    (rectangle) =>
+                        'TL: (${rectangle.topLeft.x.toStringAsFixed(1)}, ${rectangle.topLeft.y.toStringAsFixed(1)})\n' +
+                        'TR: (${rectangle.topRight.x.toStringAsFixed(1)}, ${rectangle.topRight.y.toStringAsFixed(1)})\n' +
+                        'BL: (${rectangle.bottomLeft.x.toStringAsFixed(1)}, ${rectangle.bottomLeft.y.toStringAsFixed(1)})\n' +
+                        'BR: (${rectangle.bottomRight.x.toStringAsFixed(1)}, ${rectangle.bottomRight.y.toStringAsFixed(1)})',
+                  )
+                  .join('\n\n');
         });
       } else {
         setState(() {
@@ -169,10 +174,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('矩形检测演示'),
-        backgroundColor: Colors.blue,
-      ),
+      appBar: AppBar(title: const Text('矩形检测演示'), backgroundColor: Colors.blue),
       body: Stack(
         children: [
           // 图片显示区域 - 占据全屏
@@ -181,18 +183,11 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.image_outlined,
-                        size: 80,
-                        color: Colors.grey,
-                      ),
+                      Icon(Icons.image_outlined, size: 80, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
                         '请选择一张图片开始检测',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -211,7 +206,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                     ),
                   ),
                 ),
-          
+
           // 悬浮控制面板
           _buildFloatingControlPanel(),
         ],
@@ -229,22 +224,27 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         builder: (context, constraints) {
           // 根据可用空间动态计算面板宽度
           final screenWidth = MediaQuery.of(context).size.width;
-          final maxPanelWidth = (screenWidth - 32).clamp(240.0, 360.0); // 留出左右各16像素边距，最小宽度降至240
-          
+          final maxPanelWidth = (screenWidth - 32).clamp(
+            240.0,
+            360.0,
+          ); // 留出左右各16像素边距，最小宽度降至240
+
           return Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(12),
             color: Colors.white,
             child: AnimatedContainer(
-               duration: const Duration(milliseconds: 300),
-               width: _isPanelExpanded ? maxPanelWidth : 56,
-               constraints: BoxConstraints(
-                 maxHeight: _isPanelExpanded ? 400 : 56,
-                 minHeight: 56,
-               ),
-               padding: const EdgeInsets.all(8),
-               child: _isPanelExpanded ? _buildExpandedPanel() : _buildCollapsedPanel(),
-             ),
+              duration: const Duration(milliseconds: 300),
+              width: _isPanelExpanded ? maxPanelWidth : 56,
+              constraints: BoxConstraints(
+                maxHeight: _isPanelExpanded ? 400 : 56,
+                minHeight: 56,
+              ),
+              padding: const EdgeInsets.all(8),
+              child: _isPanelExpanded
+                  ? _buildExpandedPanel()
+                  : _buildCollapsedPanel(),
+            ),
           );
         },
       ),
@@ -267,11 +267,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
             color: Colors.blue,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
-            Icons.settings,
-            color: Colors.white,
-            size: 24,
-          ),
+          child: const Icon(Icons.settings, color: Colors.white, size: 24),
         ),
       ),
     );
@@ -292,10 +288,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '控制面板',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -313,23 +306,22 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
-                child: const Icon(
-                  Icons.close,
-                  size: 12,
-                  color: Colors.black54,
-                ),
+                child: const Icon(Icons.close, size: 12, color: Colors.black54),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        
+
         // 按钮区域
         LayoutBuilder(
           builder: (context, constraints) {
             // 根据可用宽度计算按钮高度，保持合理的宽高比
-            double buttonHeight = (constraints.maxWidth * 0.15).clamp(24.0, 40.0);
-            
+            double buttonHeight = (constraints.maxWidth * 0.15).clamp(
+              24.0,
+              40.0,
+            );
+
             return Row(
               children: [
                 Expanded(
@@ -340,17 +332,17 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       child: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(
-                          '选择图片',
-                          style: TextStyle(fontSize: 14),
-                        ),
+                        child: Text('选择图片', style: TextStyle(fontSize: 14)),
                       ),
                     ),
                   ),
@@ -360,11 +352,16 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                   child: SizedBox(
                     height: buttonHeight,
                     child: ElevatedButton(
-                      onPressed: _isDetecting || _image == null ? null : _detectRectangles,
+                      onPressed: _isDetecting || _image == null
+                          ? null
+                          : _detectRectangles,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -393,7 +390,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           },
         ),
         const SizedBox(height: 12),
-        
+
         // 显示选项开关
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -429,24 +426,21 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         // 状态信息
-         Flexible(
-           child: Container(
-             width: double.infinity,
-             padding: const EdgeInsets.all(12),
-             decoration: BoxDecoration(
-               color: Colors.grey[100],
-               borderRadius: BorderRadius.circular(8),
-             ),
-             child: SingleChildScrollView(
-               child: Text(
-                 _statusMessage,
-                 style: const TextStyle(fontSize: 12),
-               ),
-             ),
-           ),
-         ),
+        Flexible(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: Text(_statusMessage, style: const TextStyle(fontSize: 12)),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -473,10 +467,10 @@ class RectanglePainter extends CustomPainter {
     // 计算图片在画布中的显示尺寸和位置
     final double aspectRatio = imageWidth / imageHeight;
     final double canvasAspectRatio = size.width / size.height;
-    
+
     double displayWidth, displayHeight;
     double offsetX = 0, offsetY = 0;
-    
+
     if (aspectRatio > canvasAspectRatio) {
       // 图片更宽，以宽度为准
       displayWidth = size.width;
@@ -488,27 +482,32 @@ class RectanglePainter extends CustomPainter {
       displayWidth = size.height * aspectRatio;
       offsetX = (size.width - displayWidth) / 2;
     }
-    
+
     // 绘制图片
-    final Rect imageRect = Rect.fromLTWH(offsetX, offsetY, displayWidth, displayHeight);
+    final Rect imageRect = Rect.fromLTWH(
+      offsetX,
+      offsetY,
+      displayWidth,
+      displayHeight,
+    );
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, imageWidth, imageHeight),
       imageRect,
       Paint(),
     );
-    
+
     // 绘制检测到的矩形
     if (rectangles != null && rectangles!.isNotEmpty) {
       final Paint rectanglePaint = Paint()
         ..color = Colors.red
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.0;
-      
+
       final Paint pointPaint = Paint()
         ..color = Colors.blue
         ..style = PaintingStyle.fill;
-      
+
       // 根据设置决定绘制哪些矩形
       List<RectangleFeature> rectanglesToDraw;
       if (showOnlyLargestRectangle) {
@@ -516,7 +515,7 @@ class RectanglePainter extends CustomPainter {
       } else {
         rectanglesToDraw = rectangles!;
       }
-      
+
       for (final rectangle in rectanglesToDraw) {
         // 获取矩形的四个顶点
         final List<Offset> uiPoints = [
@@ -538,7 +537,7 @@ class RectanglePainter extends CustomPainter {
             offsetY + (rectangle.bottomLeft.y / imageHeight) * displayHeight,
           ),
         ];
-        
+
         // 绘制矩形边框
         final Path path = Path();
         path.moveTo(uiPoints[0].dx, uiPoints[0].dy);
@@ -547,12 +546,12 @@ class RectanglePainter extends CustomPainter {
         }
         path.close();
         canvas.drawPath(path, rectanglePaint);
-        
+
         // 绘制角点
         for (final point in uiPoints) {
           canvas.drawCircle(point, 6, pointPaint);
         }
-        
+
         // 绘制点坐标标签
         final List<String> labels = ['TL', 'TR', 'BR', 'BL'];
         for (int i = 0; i < uiPoints.length; i++) {
@@ -580,12 +579,12 @@ class RectanglePainter extends CustomPainter {
       }
     }
   }
-  
+
   /// 计算矩形面积并找到最大的矩形
   RectangleFeature _findLargestRectangle(List<RectangleFeature> rectangles) {
     RectangleFeature largestRectangle = rectangles.first;
     double maxArea = _calculateRectangleArea(largestRectangle);
-    
+
     for (final rectangle in rectangles) {
       final double area = _calculateRectangleArea(rectangle);
       if (area > maxArea) {
@@ -593,10 +592,10 @@ class RectanglePainter extends CustomPainter {
         largestRectangle = rectangle;
       }
     }
-    
+
     return largestRectangle;
   }
-  
+
   /// 计算矩形面积（使用向量叉积计算四边形面积）
   double _calculateRectangleArea(RectangleFeature rectangle) {
     // 使用鞋带公式计算四边形面积
@@ -606,17 +605,17 @@ class RectanglePainter extends CustomPainter {
       rectangle.bottomRight,
       rectangle.bottomLeft,
     ];
-    
+
     double area = 0;
     for (int i = 0; i < points.length; i++) {
       final int j = (i + 1) % points.length;
       area += points[i].x * points[j].y;
       area -= points[j].x * points[i].y;
     }
-    
+
     return (area / 2).abs();
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
