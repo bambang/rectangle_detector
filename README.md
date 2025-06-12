@@ -9,6 +9,8 @@
 - ⚡ **高性能**：原生实现，处理速度快
 - 🎯 **灵活检测**：支持检测单个最大矩形或所有矩形
 - 📐 **精确坐标**：返回矩形四个角点的精确坐标
+- 🔄 **多种输入类型**：支持 Uint8List、ui.Image 和 ImageProvider 三种输入格式
+- 🛠️ **易于集成**：简洁的 API 设计，快速集成到现有项目
 
 ## 支持平台
 
@@ -27,7 +29,7 @@
 
 ```yaml
 dependencies:
-  rectangle_detector: ^0.0.1
+  rectangle_detector: ^1.0.0
 ```
 
 然后运行：
@@ -43,13 +45,12 @@ flutter pub get
 ```dart
 import 'package:rectangle_detector/rectangle_detector.dart';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
 
-// 创建检测器实例
-final rectangleDetector = RectangleDetector();
-
-// 检测单个最大矩形
-Future<void> detectSingleRectangle(Uint8List imageData) async {
-  final rectangle = await rectangleDetector.detectRectangle(imageData);
+// 方法1: 使用字节数据检测矩形
+Future<void> detectRectangleFromBytes(Uint8List imageData) async {
+  final rectangle = await RectangleDetector.detectRectangle(imageData);
   
   if (rectangle != null) {
     print('检测到矩形:');
@@ -62,15 +63,45 @@ Future<void> detectSingleRectangle(Uint8List imageData) async {
   }
 }
 
-// 检测所有矩形
+// 方法2: 使用 ui.Image 检测矩形
+Future<void> detectRectangleFromUIImage(ui.Image image) async {
+  final rectangle = await RectangleDetector.detectRectangleFromImage(image);
+  
+  if (rectangle != null) {
+    print('从 ui.Image 检测到矩形: ${rectangle.toString()}');
+  }
+}
+
+// 方法3: 使用 ImageProvider 检测矩形
+Future<void> detectRectangleFromProvider(ImageProvider imageProvider) async {
+  final rectangle = await RectangleDetector.detectRectangleFromProvider(imageProvider);
+  
+  if (rectangle != null) {
+    print('从 ImageProvider 检测到矩形: ${rectangle.toString()}');
+  }
+}
+
+// 检测所有矩形（支持三种输入类型）
 Future<void> detectAllRectangles(Uint8List imageData) async {
-  final rectangles = await rectangleDetector.detectAllRectangles(imageData);
+  final rectangles = await RectangleDetector.detectAllRectangles(imageData);
   
   print('检测到 ${rectangles.length} 个矩形');
   for (int i = 0; i < rectangles.length; i++) {
     final rect = rectangles[i];
     print('矩形 ${i + 1}: ${rect.toString()}');
   }
+}
+
+// 从 ui.Image 检测所有矩形
+Future<void> detectAllRectanglesFromImage(ui.Image image) async {
+  final rectangles = await RectangleDetector.detectAllRectanglesFromImage(image);
+  print('从 ui.Image 检测到 ${rectangles.length} 个矩形');
+}
+
+// 从 ImageProvider 检测所有矩形
+Future<void> detectAllRectanglesFromProvider(ImageProvider provider) async {
+  final rectangles = await RectangleDetector.detectAllRectanglesFromProvider(provider);
+  print('从 ImageProvider 检测到 ${rectangles.length} 个矩形');
 }
 ```
 
@@ -89,7 +120,6 @@ class RectangleDetectionPage extends StatefulWidget {
 }
 
 class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
-  final _rectangleDetector = RectangleDetector();
   List<RectangleFeature> _detectedRectangles = [];
   bool _isDetecting = false;
 
@@ -104,7 +134,7 @@ class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
       
       try {
         final imageBytes = await File(pickedFile.path).readAsBytes();
-        final rectangles = await _rectangleDetector.detectAllRectangles(imageBytes);
+        final rectangles = await RectangleDetector.detectAllRectangles(imageBytes);
         
         setState(() {
           _detectedRectangles = rectangles;
@@ -156,13 +186,13 @@ class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
 
 ### RectangleDetector
 
-主要的检测器类，提供矩形检测功能。
+主要的检测器类，提供矩形检测功能。支持三种输入类型：`Uint8List`、`ui.Image` 和 `ImageProvider`。
 
-#### 方法
+#### 检测单个矩形的方法
 
 ##### `detectRectangle(Uint8List imageData)`
 
-检测图像中的最大矩形。
+从字节数据检测图像中的最大矩形。
 
 **参数：**
 - `imageData`: 图像的字节数据 (Uint8List)
@@ -170,12 +200,54 @@ class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
 **返回值：**
 - `Future<RectangleFeature?>`: 检测到的矩形特征点，如果没有检测到则返回 null
 
+##### `detectRectangleFromImage(ui.Image image)`
+
+从 ui.Image 对象检测图像中的最大矩形。
+
+**参数：**
+- `image`: Flutter 的 ui.Image 对象
+
+**返回值：**
+- `Future<RectangleFeature?>`: 检测到的矩形特征点，如果没有检测到则返回 null
+
+##### `detectRectangleFromProvider(ImageProvider imageProvider)`
+
+从 ImageProvider 检测图像中的最大矩形。
+
+**参数：**
+- `imageProvider`: Flutter 的 ImageProvider 对象（如 AssetImage、NetworkImage 等）
+
+**返回值：**
+- `Future<RectangleFeature?>`: 检测到的矩形特征点，如果没有检测到则返回 null
+
+#### 检测所有矩形的方法
+
 ##### `detectAllRectangles(Uint8List imageData)`
 
-检测图像中的所有矩形。
+从字节数据检测图像中的所有矩形。
 
 **参数：**
 - `imageData`: 图像的字节数据 (Uint8List)
+
+**返回值：**
+- `Future<List<RectangleFeature>>`: 所有检测到的矩形特征点列表
+
+##### `detectAllRectanglesFromImage(ui.Image image)`
+
+从 ui.Image 对象检测图像中的所有矩形。
+
+**参数：**
+- `image`: Flutter 的 ui.Image 对象
+
+**返回值：**
+- `Future<List<RectangleFeature>>`: 所有检测到的矩形特征点列表
+
+##### `detectAllRectanglesFromProvider(ImageProvider imageProvider)`
+
+从 ImageProvider 检测图像中的所有矩形。
+
+**参数：**
+- `imageProvider`: Flutter 的 ImageProvider 对象（如 AssetImage、NetworkImage 等）
 
 **返回值：**
 - `Future<List<RectangleFeature>>`: 所有检测到的矩形特征点列表

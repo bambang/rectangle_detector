@@ -2,9 +2,7 @@ import 'dart:typed_data';
 import 'package:rectangle_detector/rectangle_detector.dart';
 
 /// 矩形检测插件使用示例
-void main() async {
-  final plugin = RectangleDetector();
-  
+void main() async { 
   // 示例：从文件读取图片
   // final file = File('path/to/your/image.jpg');
   // final imageData = await file.readAsBytes();
@@ -14,7 +12,7 @@ void main() async {
   
   try {
     // 检测单个矩形（最大的矩形）
-    final rectangle = await plugin.detectRectangle(imageData);
+    final rectangle = await RectangleDetector.detectRectangle(imageData);
     if (rectangle != null) {
       print('检测到矩形:');
       print('左上角: ${rectangle.topLeft}');
@@ -26,7 +24,7 @@ void main() async {
     }
     
     // 检测所有矩形
-    final allRectangles = await plugin.detectAllRectangles(imageData);
+    final allRectangles = await RectangleDetector.detectAllRectangles(imageData);
     print('\n检测到 ${allRectangles.length} 个矩形:');
     for (int i = 0; i < allRectangles.length; i++) {
       final rect = allRectangles[i];
@@ -51,7 +49,6 @@ void main() async {
 /// }
 /// 
 /// class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
-///   final _plugin = RectangleDetector();
 ///   RectangleFeature? _detectedRectangle;
 ///   
 ///   Future<void> _pickAndDetectImage() async {
@@ -60,7 +57,7 @@ void main() async {
 ///     
 ///     if (pickedFile != null) {
 ///       final imageData = await pickedFile.readAsBytes();
-///       final rectangle = await _plugin.detectRectangle(imageData);
+///       final rectangle = await RectangleDetector.detectRectangle(imageData);
 ///       
 ///       setState(() {
 ///         _detectedRectangle = rectangle;

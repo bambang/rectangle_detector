@@ -55,23 +55,21 @@ void main() {
   });
 
   test('getPlatformVersion', () async {
-    RectangleDetector rectangleDetector = RectangleDetector();
     MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
     RectangleDetectorPlatform.instance = fakePlatform;
 
-    expect(await rectangleDetector.getPlatformVersion(), '42');
+    expect(await RectangleDetector.getPlatformVersion(), '42');
   });
   
   /// 测试单个矩形检测功能
   test('detectRectangle returns valid rectangle', () async {
-    RectangleDetector rectangleDetector = RectangleDetector();
     MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
     RectangleDetectorPlatform.instance = fakePlatform;
     
     // 创建测试用的图片数据
     final Uint8List testImageData = Uint8List.fromList([1, 2, 3, 4]);
     
-    final result = await rectangleDetector.detectRectangle(testImageData);
+    final result = await RectangleDetector.detectRectangle(testImageData);
     
     expect(result, isNotNull);
     expect(result!.topLeft.x, equals(10.0));
@@ -83,14 +81,13 @@ void main() {
   
   /// 测试多个矩形检测功能
   test('detectAllRectangles returns list of rectangles', () async {
-    RectangleDetector rectangleDetector = RectangleDetector();
     MockRectangleDetectorPlatform fakePlatform = MockRectangleDetectorPlatform();
     RectangleDetectorPlatform.instance = fakePlatform;
     
     // 创建测试用的图片数据
     final Uint8List testImageData = Uint8List.fromList([1, 2, 3, 4]);
     
-    final results = await rectangleDetector.detectAllRectangles(testImageData);
+    final results = await RectangleDetector.detectAllRectangles(testImageData);
     
     expect(results, isNotNull);
     expect(results.length, equals(2));
