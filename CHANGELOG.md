@@ -1,3 +1,14 @@
+# Changelog
+
+## 1.0.2
+
+### 🔧 Bug Fixes
+
+* Fixed code quality warnings in example files
+* Replaced `print` statements with `developer.log` for better logging practices
+* Optimized string concatenation to improve code readability
+* Enhanced code analysis compliance
+
 ## 1.0.1
 
 ### 🔧 Bug Fixes
