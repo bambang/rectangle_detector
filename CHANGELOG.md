@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3
+
+### 🔧 Bug Fixes
+
+* Fixed web package compatibility issues with Flutter 3.16.0+
+* Updated web dependency to ^1.0.0 for better Flutter version compatibility
+* Resolved JSObject supertype errors in web implementation
+* Enhanced cross-platform stability and build reliability
+
 ## 1.0.2
 
 ### 🔧 Bug Fixes
