@@ -21,11 +21,19 @@ external JSAny? get cv;
 @JS('openCVReady')
 external bool? get openCVReady;
 
-/// A web implementation of the RectangleDetectorPlatform of the RectangleDetector plugin.
+/// Web 平台的矩形检测器实现
+///
+/// 使用 OpenCV.js 在浏览器中进行图像处理和矩形检测
 class RectangleDetectorWeb extends RectangleDetectorPlatform {
-  /// Constructs a RectangleDetectorWeb
+  /// 构造函数
   RectangleDetectorWeb();
 
+  /// OpenCV.js 加载状态
+  static bool _isOpenCVLoaded = false;
+  static bool _isOpenCVLoading = false;
+  static final List<Completer<void>> _loadingCompleters = [];
+
+  /// 注册 Web 平台实现
   static void registerWith(Registrar registrar) {
     RectangleDetectorPlatform.instance = RectangleDetectorWeb();
   }
@@ -38,6 +46,12 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
   @override
   Future<Map<String, dynamic>?> detectRectangle(Uint8List imageData) async {
     try {
+      // 输入验证
+      if (imageData.isEmpty) {
+        debugPrint('矩形检测错误: 图像数据为空');
+        return null;
+      }
+
       // 确保 OpenCV.js 已加载
       await _ensureOpenCVLoaded();
 
@@ -48,12 +62,14 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       final result = _detectSingleRectangleJS(imageElement as JSAny);
 
       if (result == null) {
+        debugPrint('矩形检测: 未检测到矩形');
         return null;
       }
 
       return _convertJSObjectToMap(result);
-    } catch (e) {
-      debugPrint('Web 矩形检测错误: \$e');
+    } catch (e, stackTrace) {
+      debugPrint('Web 矩形检测错误: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
       return null;
     }
   }
@@ -63,6 +79,12 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
     Uint8List imageData,
   ) async {
     try {
+      // 输入验证
+      if (imageData.isEmpty) {
+        debugPrint('所有矩形检测错误: 图像数据为空');
+        return <Map<String, dynamic>>[];
+      }
+
       // 确保 OpenCV.js 已加载
       await _ensureOpenCVLoaded();
 
@@ -73,40 +95,68 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       final result = _detectAllRectanglesJS(imageElement as JSAny);
 
       if (result == null) {
+        debugPrint('所有矩形检测: 未检测到矩形');
         return <Map<String, dynamic>>[];
       }
 
       // 转换 JavaScript 数组为 Dart List
       return _convertJSArrayToList(result);
-    } catch (e) {
-      debugPrint('Web 所有矩形检测错误: \$e');
+    } catch (e, stackTrace) {
+      debugPrint('Web 所有矩形检测错误: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
       return <Map<String, dynamic>>[];
     }
   }
 
   /// 确保 OpenCV.js 已加载
+  ///
+  /// 使用单例模式避免重复加载，支持并发调用
   Future<void> _ensureOpenCVLoaded() async {
-    final completer = Completer<void>();
-
-    // 检查 OpenCV 是否已经加载
-    if (cv != null && openCVReady == true) {
+    // 如果已经加载完成，直接返回
+    if (_isOpenCVLoaded && cv != null && openCVReady == true) {
       return;
     }
 
-    // 如果 OpenCV 脚本还没有加载，先加载它
-    if (cv == null) {
-      await _loadOpenCVScript();
+    // 如果正在加载，等待加载完成
+    if (_isOpenCVLoading) {
+      final completer = Completer<void>();
+      _loadingCompleters.add(completer);
+      return completer.future;
     }
 
-    // 等待 OpenCV 初始化完成
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (openCVReady == true) {
-        timer.cancel();
-        completer.complete();
-      }
-    });
+    // 开始加载
+    _isOpenCVLoading = true;
 
-    return completer.future;
+    try {
+      // 如果 OpenCV 脚本还没有加载，先加载它
+      if (cv == null) {
+        await _loadOpenCVScript();
+      }
+
+      // 等待 OpenCV 初始化完成（最多等待30秒）
+      await _waitForOpenCVReady();
+
+      _isOpenCVLoaded = true;
+
+      // 通知所有等待的调用者
+      for (final completer in _loadingCompleters) {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+      _loadingCompleters.clear();
+    } catch (e) {
+      // 通知所有等待的调用者加载失败
+      for (final completer in _loadingCompleters) {
+        if (!completer.isCompleted) {
+          completer.completeError(e);
+        }
+      }
+      _loadingCompleters.clear();
+      rethrow;
+    } finally {
+      _isOpenCVLoading = false;
+    }
   }
 
   /// 加载 OpenCV.js 脚本
@@ -117,13 +167,18 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
         web.document.createElement('script') as web.HTMLScriptElement;
     script.src = 'https://docs.opencv.org/4.8.0/opencv.js';
     script.type = 'text/javascript';
+    script.async = true;
+    script.crossOrigin = 'anonymous';
 
     script.onload = (web.Event event) {
+      debugPrint('OpenCV.js 脚本加载成功');
       completer.complete();
     }.toJS;
 
     script.onerror = (web.Event event) {
-      completer.completeError('Failed to load OpenCV.js');
+      const error = 'Failed to load OpenCV.js from CDN';
+      debugPrint('OpenCV.js 脚本加载失败: $error');
+      completer.completeError(error);
     }.toJS;
 
     web.document.head!.appendChild(script);
@@ -131,38 +186,146 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
     return completer.future;
   }
 
-  /// 从字节数据创建图像元素
-  Future<web.HTMLImageElement> _createImageFromBytes(
-    Uint8List imageData,
-  ) async {
-    final completer = Completer<web.HTMLImageElement>();
+  /// 等待 OpenCV 初始化完成
+  Future<void> _waitForOpenCVReady() async {
+    final completer = Completer<void>();
+    const maxWaitTime = Duration(seconds: 30);
+    const checkInterval = Duration(milliseconds: 100);
 
-    // 创建 Blob
-    final blob = web.Blob(
-      [imageData.toJS].toJS,
-      web.BlobPropertyBag(type: 'image/jpeg'),
-    );
-    final url = web.URL.createObjectURL(blob);
+    final startTime = DateTime.now();
 
-    // 创建图像元素
-    final img = web.document.createElement('img') as web.HTMLImageElement;
+    Timer.periodic(checkInterval, (timer) {
+      final elapsed = DateTime.now().difference(startTime);
 
-    img.onload = (web.Event event) {
-      web.URL.revokeObjectURL(url);
-      completer.complete(img);
-    }.toJS;
-
-    img.onerror = (web.Event event) {
-      web.URL.revokeObjectURL(url);
-      completer.completeError('Failed to load image');
-    }.toJS;
-
-    img.src = url;
+      if (openCVReady == true) {
+        timer.cancel();
+        debugPrint('OpenCV.js 初始化完成');
+        completer.complete();
+      } else if (elapsed > maxWaitTime) {
+        timer.cancel();
+        const error = 'OpenCV.js 初始化超时';
+        debugPrint(error);
+        completer.completeError(error);
+      }
+    });
 
     return completer.future;
   }
 
+  /// 从字节数据创建图像元素
+  ///
+  /// 支持多种图像格式，包含超时和错误处理
+  Future<web.HTMLImageElement> _createImageFromBytes(
+    Uint8List imageData,
+  ) async {
+    final completer = Completer<web.HTMLImageElement>();
+    Timer? timeoutTimer;
+
+    try {
+      // 检测图像类型
+      final mimeType = _detectImageMimeType(imageData);
+      debugPrint('检测到图像类型: $mimeType');
+
+      // 创建 Blob
+      final blob = web.Blob(
+        [imageData.toJS].toJS,
+        web.BlobPropertyBag(type: mimeType),
+      );
+      final url = web.URL.createObjectURL(blob);
+
+      // 创建图像元素
+      final img = web.document.createElement('img') as web.HTMLImageElement;
+      img.crossOrigin = 'anonymous';
+
+      // 设置超时（10秒）
+      timeoutTimer = Timer(const Duration(seconds: 10), () {
+        web.URL.revokeObjectURL(url);
+        if (!completer.isCompleted) {
+          completer.completeError('图像加载超时');
+        }
+      });
+
+      img.onload = (web.Event event) {
+        timeoutTimer?.cancel();
+        web.URL.revokeObjectURL(url);
+
+        // 验证图像有效性
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          debugPrint('图像加载成功: ${img.naturalWidth}x${img.naturalHeight}');
+          completer.complete(img);
+        } else {
+          completer.completeError('无效图像: 尺寸为零');
+        }
+      }.toJS;
+
+      img.onerror = (web.Event event) {
+        timeoutTimer?.cancel();
+        web.URL.revokeObjectURL(url);
+        completer.completeError('图像加载失败: $event');
+      }.toJS;
+
+      img.src = url;
+
+      return completer.future;
+    } catch (e) {
+      timeoutTimer?.cancel();
+      completer.completeError('创建图像元素失败: $e');
+      return completer.future;
+    }
+  }
+
+  /// 检测图像 MIME 类型
+  ///
+  /// 根据文件头字节判断图像格式
+  String _detectImageMimeType(Uint8List imageData) {
+    if (imageData.length < 4) return 'image/jpeg';
+
+    // PNG 签名: 89 50 4E 47
+    if (imageData[0] == 0x89 &&
+        imageData[1] == 0x50 &&
+        imageData[2] == 0x4E &&
+        imageData[3] == 0x47) {
+      return 'image/png';
+    }
+
+    // JPEG 签名: FF D8
+    if (imageData[0] == 0xFF && imageData[1] == 0xD8) {
+      return 'image/jpeg';
+    }
+
+    // WebP 签名: 52 49 46 46 ... 57 45 42 50
+    if (imageData.length >= 12 &&
+        imageData[0] == 0x52 &&
+        imageData[1] == 0x49 &&
+        imageData[2] == 0x46 &&
+        imageData[3] == 0x46 &&
+        imageData[8] == 0x57 &&
+        imageData[9] == 0x45 &&
+        imageData[10] == 0x42 &&
+        imageData[11] == 0x50) {
+      return 'image/webp';
+    }
+
+    // GIF 签名: 47 49 46 38
+    if (imageData[0] == 0x47 &&
+        imageData[1] == 0x49 &&
+        imageData[2] == 0x46 &&
+        imageData[3] == 0x38) {
+      return 'image/gif';
+    }
+
+    // BMP 签名: 42 4D
+    if (imageData[0] == 0x42 && imageData[1] == 0x4D) {
+      return 'image/bmp';
+    }
+
+    // 默认返回 JPEG
+    return 'image/jpeg';
+  }
+
   /// 将 JavaScript 对象转换为 Dart Map
+  ///
+  /// 安全地提取矩形角点坐标
   Map<String, dynamic> _convertJSObjectToMap(JSAny? jsObject) {
     if (jsObject == null) return <String, dynamic>{};
 
@@ -175,42 +338,51 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       final bottomRight = _getProperty(jsObject, 'bottomRight');
       final bottomLeft = _getProperty(jsObject, 'bottomLeft');
 
+      // 安全地提取坐标
       if (topLeft != null) {
-        result['topLeft'] = {
-          'x': _getProperty(topLeft, 'x')?.dartify(),
-          'y': _getProperty(topLeft, 'y')?.dartify(),
-        };
+        result['topLeft'] = _extractPoint(topLeft);
       }
 
       if (topRight != null) {
-        result['topRight'] = {
-          'x': _getProperty(topRight, 'x')?.dartify(),
-          'y': _getProperty(topRight, 'y')?.dartify(),
-        };
+        result['topRight'] = _extractPoint(topRight);
       }
 
       if (bottomRight != null) {
-        result['bottomRight'] = {
-          'x': _getProperty(bottomRight, 'x')?.dartify(),
-          'y': _getProperty(bottomRight, 'y')?.dartify(),
-        };
+        result['bottomRight'] = _extractPoint(bottomRight);
       }
 
       if (bottomLeft != null) {
-        result['bottomLeft'] = {
-          'x': _getProperty(bottomLeft, 'x')?.dartify(),
-          'y': _getProperty(bottomLeft, 'y')?.dartify(),
-        };
+        result['bottomLeft'] = _extractPoint(bottomLeft);
+      }
+
+      // 验证结果完整性
+      if (result.length == 4) {
+        debugPrint('成功提取矩形坐标: $result');
+      } else {
+        debugPrint('矩形坐标不完整: $result');
       }
 
       return result;
     } catch (e) {
-      debugPrint('JavaScript 对象转换错误: \$e');
+      debugPrint('JavaScript 对象转换错误: $e');
       return <String, dynamic>{};
     }
   }
 
+  /// 提取点坐标
+  Map<String, dynamic> _extractPoint(JSAny point) {
+    final x = _getProperty(point, 'x')?.dartify();
+    final y = _getProperty(point, 'y')?.dartify();
+
+    return {
+      'x': (x is num) ? x.toDouble() : 0.0,
+      'y': (y is num) ? y.toDouble() : 0.0,
+    };
+  }
+
   /// 将 JavaScript 数组转换为 Dart List
+  ///
+  /// 安全地处理数组转换和元素提取
   List<Map<String, dynamic>> _convertJSArrayToList(JSAny? jsArray) {
     if (jsArray == null) return <Map<String, dynamic>>[];
 
@@ -218,28 +390,44 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
       final List<Map<String, dynamic>> result = <Map<String, dynamic>>[];
       final length = _getProperty(jsArray, 'length')?.dartify() as int? ?? 0;
 
+      debugPrint('检测到 $length 个矩形');
+
       for (int i = 0; i < length; i++) {
         final item = _getArrayItem(jsArray, i);
         if (item != null) {
-          result.add(_convertJSObjectToMap(item));
+          final rectangle = _convertJSObjectToMap(item);
+          if (rectangle.isNotEmpty) {
+            result.add(rectangle);
+          }
         }
       }
 
+      debugPrint('成功转换 ${result.length} 个矩形');
       return result;
     } catch (e) {
-      debugPrint('JavaScript 数组转换错误: \$e');
+      debugPrint('JavaScript 数组转换错误: $e');
       return <Map<String, dynamic>>[];
     }
   }
 
   /// 辅助方法：获取对象属性
   JSAny? _getProperty(JSAny object, String name) {
-    return (object as JSObject)[name];
+    try {
+      return (object as JSObject)[name];
+    } catch (e) {
+      debugPrint('获取属性 $name 失败: $e');
+      return null;
+    }
   }
 
   /// 辅助方法：获取数组元素（兼容3.2.0版本）
   JSAny? _getArrayItem(JSAny array, int index) {
-    // 使用字符串索引访问数组元素，兼容Dart 3.2.0
-    return (array as JSObject)[index.toString()];
+    try {
+      // 使用字符串索引访问数组元素，兼容Dart 3.2.0
+      return (array as JSObject)[index.toString()];
+    } catch (e) {
+      debugPrint('获取数组元素 $index 失败: $e');
+      return null;
+    }
   }
 }

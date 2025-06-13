@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.4
+
+### 🚀 Enhancements
+
+* Added timeout mechanism for OpenCV initialization (30 seconds) and image loading (10 seconds)
+* Improved MIME type detection with support for multiple image formats (PNG, JPEG, WebP, GIF, BMP)
+* Enhanced error handling and resource management in web implementation
+* Added more robust image processing with better timeout controls
+* Improved debugging information and error messages
+
+### 🔧 Technical Improvements
+
+* Enhanced `_ensureOpenCVLoaded` method with configurable timeout
+* Improved `_createImageFromBytes` method with image loading timeout
+* Added comprehensive `_detectImageMimeType` method for better format detection
+* Better memory management and resource cleanup
+* Enhanced cross-platform stability
+
 ## 1.0.3
 
 ### 🔧 Bug Fixes
