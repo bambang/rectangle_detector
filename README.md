@@ -50,7 +50,7 @@
 
 ```yaml
 dependencies:
-  rectangle_detector: ^1.0.2
+  rectangle_detector: ^1.0.3
 ```
 
 然后运行：
