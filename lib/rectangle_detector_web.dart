@@ -237,8 +237,9 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
     return (object as JSObject)[name];
   }
 
-  /// 辅助方法：获取数组元素
+  /// 辅助方法：获取数组元素（兼容3.2.0版本）
   JSAny? _getArrayItem(JSAny array, int index) {
-    return (array as JSArray)[index];
+    // 使用字符串索引访问数组元素，兼容Dart 3.2.0
+    return (array as JSObject)[index.toString()];
   }
 }

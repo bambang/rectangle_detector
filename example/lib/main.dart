@@ -145,16 +145,16 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           _detectedRectangles = rectangles;
           _isDetecting = false;
           _statusMessage =
-              '检测到 ${rectangles.length} 个矩形:\n' +
-              rectangles
+              '检测到 ${rectangles.length} 个矩形:\n'
+              '${rectangles
                   .map(
                     (rectangle) =>
-                        'TL: (${rectangle.topLeft.x.toStringAsFixed(1)}, ${rectangle.topLeft.y.toStringAsFixed(1)})\n' +
-                        'TR: (${rectangle.topRight.x.toStringAsFixed(1)}, ${rectangle.topRight.y.toStringAsFixed(1)})\n' +
-                        'BL: (${rectangle.bottomLeft.x.toStringAsFixed(1)}, ${rectangle.bottomLeft.y.toStringAsFixed(1)})\n' +
+                        'TL: (${rectangle.topLeft.x.toStringAsFixed(1)}, ${rectangle.topLeft.y.toStringAsFixed(1)})\n'
+                        'TR: (${rectangle.topRight.x.toStringAsFixed(1)}, ${rectangle.topRight.y.toStringAsFixed(1)})\n'
+                        'BL: (${rectangle.bottomLeft.x.toStringAsFixed(1)}, ${rectangle.bottomLeft.y.toStringAsFixed(1)})\n'
                         'BR: (${rectangle.bottomRight.x.toStringAsFixed(1)}, ${rectangle.bottomRight.y.toStringAsFixed(1)})',
                   )
-                  .join('\n\n');
+                  .join('\n\n')}';
         });
       } else {
         setState(() {

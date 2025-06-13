@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 import 'package:rectangle_detector/rectangle_detector.dart';
 
 /// 矩形检测插件使用示例
@@ -14,26 +15,26 @@ void main() async {
     // 检测单个矩形（最大的矩形）
     final rectangle = await RectangleDetector.detectRectangle(imageData);
     if (rectangle != null) {
-      print('检测到矩形:');
-      print('左上角: ${rectangle.topLeft}');
-      print('右上角: ${rectangle.topRight}');
-      print('左下角: ${rectangle.bottomLeft}');
-      print('右下角: ${rectangle.bottomRight}');
+      developer.log('检测到矩形:');
+      developer.log('左上角: ${rectangle.topLeft}');
+      developer.log('右上角: ${rectangle.topRight}');
+      developer.log('左下角: ${rectangle.bottomLeft}');
+      developer.log('右下角: ${rectangle.bottomRight}');
     } else {
-      print('未检测到矩形');
+      developer.log('未检测到矩形');
     }
 
     // 检测所有矩形
     final allRectangles = await RectangleDetector.detectAllRectangles(
       imageData,
     );
-    print('\n检测到 ${allRectangles.length} 个矩形:');
+    developer.log('\n检测到 ${allRectangles.length} 个矩形:');
     for (int i = 0; i < allRectangles.length; i++) {
       final rect = allRectangles[i];
-      print('矩形 ${i + 1}: $rect');
+      developer.log('矩形 ${i + 1}: $rect');
     }
   } catch (e) {
-    print('检测过程中发生错误: $e');
+    developer.log('检测过程中发生错误: $e', level: 1000); // 错误级别
   }
 }
 
