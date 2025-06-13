@@ -99,7 +99,7 @@ class RectangleDetectorWeb extends RectangleDetectorPlatform {
     }
 
     // 等待 OpenCV 初始化完成
-    Timer.periodic(Duration(milliseconds: 100), (timer) {
+    Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (openCVReady == true) {
         timer.cancel();
         completer.complete();

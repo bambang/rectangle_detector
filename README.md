@@ -1,5 +1,12 @@
 # Rectangle Detector
 
+[![Pub Version](https://img.shields.io/pub/v/rectangle_detector.svg)](https://pub.dev/packages/rectangle_detector)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.7.0-blue.svg)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-%5E3.2.0-blue.svg)](https://dart.dev/)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20macOS-blue.svg)](https://flutter.dev/)
+[![Support](https://img.shields.io/badge/Support-Mobile%20%7C%20Desktop%20%7C%20Web-green.svg)](https://flutter.dev/)
+
 一个基于原生平台的Flutter插件，提供高效的矩形特征点识别功能。支持从图像中检测矩形并返回精确的四个角点坐标。
 
 ## 功能特性
@@ -23,13 +30,27 @@
 | Windows | ❌ |
 | Linux | ❌ |
 
+## 演示效果
+
+### Android 平台
+![Android Demo](docs/images/demo-android.png)
+
+### iOS 平台
+![iOS Demo](docs/images/demo-ios.png)
+
+### macOS 平台
+![macOS Demo](docs/images/demo-macos.png)
+
+### Web 平台
+![Web Demo](docs/images/demo-web.png)
+
 ## 安装
 
 在你的 `pubspec.yaml` 文件中添加依赖：
 
 ```yaml
 dependencies:
-  rectangle_detector: ^1.0.0
+  rectangle_detector: ^1.0.2
 ```
 
 然后运行：

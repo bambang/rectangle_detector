@@ -1,12 +1,12 @@
 name: rectangle_detector
-description: "A Flutter plugin for rectangle detection and feature point identification. Supports multiple input types including Uint8List, ui.Image, and ImageProvider with native platform integration for Android, iOS, macOS, and Web."
-version: 1.0.1
+description: "A Flutter plugin for rectangle detection and feature point identification. Supports Uint8List, ui.Image, and ImageProvider inputs."
+version: 1.0.2
 homepage: https://github.com/YongTaiSin/rectangle_detector
 repository: https://github.com/YongTaiSin/rectangle_detector
 
 environment:
-  sdk: ^3.8.1
-  flutter: '>=3.3.0'
+  sdk: ^3.2.0
+  flutter: '>=3.7.0'
 
 dependencies:
   flutter:
@@ -19,7 +19,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
