@@ -33,16 +33,16 @@
 ## 演示效果
 
 ### Android 平台
-![Android Demo](docs/images/demo-android.png)
+![Android Demo](doc/images/demo-android.png)
 
 ### iOS 平台
-![iOS Demo](docs/images/demo-ios.png)
+![iOS Demo](doc/images/demo-ios.png)
 
 ### macOS 平台
-![macOS Demo](docs/images/demo-macos.png)
+![macOS Demo](doc/images/demo-macos.png)
 
 ### Web 平台
-![Web Demo](docs/images/demo-web.png)
+![Web Demo](doc/images/demo-web.png)
 
 ## 安装
 
