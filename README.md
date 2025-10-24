@@ -7,6 +7,12 @@
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20macOS-blue.svg)](https://flutter.dev/)
 [![Support](https://img.shields.io/badge/Support-Mobile%20%7C%20Desktop%20%7C%20Web-green.svg)](https://flutter.dev/)
 
+A Flutter plugin based on native platforms that provides efficient rectangle feature point recognition functionality. Supports detecting rectangles from images and returning precise coordinates of four corner points.
+
+---
+
+## 🇨🇳 中文文档
+
 一个基于原生平台的Flutter插件，提供高效的矩形特征点识别功能。支持从图像中检测矩形并返回精确的四个角点坐标。
 
 ## 功能特性
@@ -339,4 +345,341 @@ A: 当前版本主要针对静态图像检测，实时检测功能将在后续�
 ## 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+---
+
+## 🇺🇸 English Documentation
+
+A Flutter plugin based on native platforms that provides efficient rectangle feature point recognition functionality. Supports detecting rectangles from images and returning precise coordinates of four corner points.
+
+## Features
+
+- 🔍 **High Precision Detection**: Based on native platform algorithms, provides accurate rectangle recognition
+- 📱 **Multi-platform Support**: Supports Android, iOS, macOS and Web platforms
+- ⚡ **High Performance**: Native implementation with fast processing speed
+- 🎯 **Flexible Detection**: Supports detecting single largest rectangle or all rectangles
+- 📐 **Precise Coordinates**: Returns precise coordinates of four corner points of rectangles
+- 🔄 **Multiple Input Types**: Supports three input formats: Uint8List, ui.Image and ImageProvider
+- 🛠️ **Easy Integration**: Simple API design for quick integration into existing projects
+
+## Supported Platforms
+
+| Platform | Support Status |
+|----------|----------------|
+| Android  | ✅ |
+| iOS      | ✅ |
+| macOS    | ✅ |
+| Web      | ✅ |
+| Windows  | ❌ |
+| Linux    | ❌ |
+
+## Demo Results
+
+### Android Platform
+![Android Demo](doc/images/demo-android.png)
+
+### iOS Platform
+![iOS Demo](doc/images/demo-ios.png)
+
+### macOS Platform
+![macOS Demo](doc/images/demo-macos.png)
+
+### Web Platform
+![Web Demo](doc/images/demo-web.png)
+
+## Installation
+
+Add the dependency to your `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  rectangle_detector: ^1.0.4
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+## Usage
+
+### Basic Usage
+
+```dart
+import 'package:rectangle_detector/rectangle_detector.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
+
+// Method 1: Detect rectangle using byte data
+Future<void> detectRectangleFromBytes(Uint8List imageData) async {
+  final rectangle = await RectangleDetector.detectRectangle(imageData);
+  
+  if (rectangle != null) {
+    print('Rectangle detected:');
+    print('Top Left: ${rectangle.topLeft}');
+    print('Top Right: ${rectangle.topRight}');
+    print('Bottom Left: ${rectangle.bottomLeft}');
+    print('Bottom Right: ${rectangle.bottomRight}');
+  } else {
+    print('No rectangle detected');
+  }
+}
+
+// Method 2: Detect rectangle using ui.Image
+Future<void> detectRectangleFromUIImage(ui.Image image) async {
+  final rectangle = await RectangleDetector.detectRectangleFromImage(image);
+  
+  if (rectangle != null) {
+    print('Rectangle detected from ui.Image: ${rectangle.toString()}');
+  }
+}
+
+// Method 3: Detect rectangle using ImageProvider
+Future<void> detectRectangleFromProvider(ImageProvider imageProvider) async {
+  final rectangle = await RectangleDetector.detectRectangleFromProvider(imageProvider);
+  
+  if (rectangle != null) {
+    print('Rectangle detected from ImageProvider: ${rectangle.toString()}');
+  }
+}
+
+// Detect all rectangles (supports three input types)
+Future<void> detectAllRectangles(Uint8List imageData) async {
+  final rectangles = await RectangleDetector.detectAllRectangles(imageData);
+  
+  print('Detected ${rectangles.length} rectangles');
+  for (int i = 0; i < rectangles.length; i++) {
+    final rect = rectangles[i];
+    print('Rectangle ${i + 1}: ${rect.toString()}');
+  }
+}
+
+// Detect all rectangles from ui.Image
+Future<void> detectAllRectanglesFromImage(ui.Image image) async {
+  final rectangles = await RectangleDetector.detectAllRectanglesFromImage(image);
+  print('Detected ${rectangles.length} rectangles from ui.Image');
+}
+
+// Detect all rectangles from ImageProvider
+Future<void> detectAllRectanglesFromProvider(ImageProvider provider) async {
+  final rectangles = await RectangleDetector.detectAllRectanglesFromProvider(provider);
+  print('Detected ${rectangles.length} rectangles from ImageProvider');
+}
+```
+
+### Complete Example
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:rectangle_detector/rectangle_detector.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
+import 'dart:io';
+
+class RectangleDetectionPage extends StatefulWidget {
+  @override
+  _RectangleDetectionPageState createState() => _RectangleDetectionPageState();
+}
+
+class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
+  List<RectangleFeature> _detectedRectangles = [];
+  bool _isDetecting = false;
+
+  Future<void> _pickAndDetectImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile != null) {
+      setState(() {
+        _isDetecting = true;
+      });
+      
+      try {
+        final imageBytes = await File(pickedFile.path).readAsBytes();
+        final rectangles = await RectangleDetector.detectAllRectangles(imageBytes);
+        
+        setState(() {
+          _detectedRectangles = rectangles;
+          _isDetecting = false;
+        });
+      } catch (e) {
+        setState(() {
+          _isDetecting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Detection failed: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Rectangle Detection Example'),
+      ),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: _isDetecting ? null : _pickAndDetectImage,
+            child: Text(_isDetecting ? 'Detecting...' : 'Select Image and Detect'),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _detectedRectangles.length,
+              itemBuilder: (context, index) {
+                final rect = _detectedRectangles[index];
+                return ListTile(
+                  title: Text('Rectangle ${index + 1}'),
+                  subtitle: Text('Top Left: ${rect.topLeft}, Bottom Right: ${rect.bottomRight}'),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+## API Documentation
+
+### RectangleDetector
+
+The main detector class that provides rectangle detection functionality. Supports three input types: `Uint8List`, `ui.Image` and `ImageProvider`.
+
+#### Methods for detecting single rectangle
+
+##### `detectRectangle(Uint8List imageData)`
+
+Detects the largest rectangle in the image from byte data.
+
+**Parameters:**
+- `imageData`: Image byte data (Uint8List)
+
+**Returns:**
+- `Future<RectangleFeature?>`: Detected rectangle feature points, returns null if no rectangle is detected
+
+##### `detectRectangleFromImage(ui.Image image)`
+
+Detects the largest rectangle in the image from ui.Image object.
+
+**Parameters:**
+- `image`: Flutter's ui.Image object
+
+**Returns:**
+- `Future<RectangleFeature?>`: Detected rectangle feature points, returns null if no rectangle is detected
+
+##### `detectRectangleFromProvider(ImageProvider imageProvider)`
+
+Detects the largest rectangle in the image from ImageProvider.
+
+**Parameters:**
+- `imageProvider`: Flutter's ImageProvider object (such as AssetImage, NetworkImage, etc.)
+
+**Returns:**
+- `Future<RectangleFeature?>`: Detected rectangle feature points, returns null if no rectangle is detected
+
+#### Methods for detecting all rectangles
+
+##### `detectAllRectangles(Uint8List imageData)`
+
+Detects all rectangles in the image from byte data.
+
+**Parameters:**
+- `imageData`: Image byte data (Uint8List)
+
+**Returns:**
+- `Future<List<RectangleFeature>>`: List of all detected rectangle feature points
+
+##### `detectAllRectanglesFromImage(ui.Image image)`
+
+Detects all rectangles in the image from ui.Image object.
+
+**Parameters:**
+- `image`: Flutter's ui.Image object
+
+**Returns:**
+- `Future<List<RectangleFeature>>`: List of all detected rectangle feature points
+
+##### `detectAllRectanglesFromProvider(ImageProvider imageProvider)`
+
+Detects all rectangles in the image from ImageProvider.
+
+**Parameters:**
+- `imageProvider`: Flutter's ImageProvider object (such as AssetImage, NetworkImage, etc.)
+
+**Returns:**
+- `Future<List<RectangleFeature>>`: List of all detected rectangle feature points
+
+### RectangleFeature
+
+Data class representing rectangle feature points.
+
+#### Properties
+
+- `topLeft`: Top-left corner coordinates (Point<double>)
+- `topRight`: Top-right corner coordinates (Point<double>)
+- `bottomLeft`: Bottom-left corner coordinates (Point<double>)
+- `bottomRight`: Bottom-right corner coordinates (Point<double>)
+
+#### Methods
+
+##### `fromMap(Map<String, dynamic> map)`
+
+Creates a RectangleFeature object from Map data.
+
+## Example Application
+
+This plugin includes a complete example application that demonstrates how to:
+
+- Select images for detection
+- Display detection results
+- Draw detected rectangles on images
+- Handle detection errors
+
+Run the example:
+
+```bash
+cd example
+flutter run
+```
+
+## Notes
+
+1. **Image Format**: Supports common image formats (JPEG, PNG, etc.)
+2. **Performance**: Large images may require longer processing time
+3. **Accuracy**: Detection accuracy depends on image quality and rectangle clarity
+4. **Memory**: Pay attention to memory usage when processing large images
+
+## FAQ
+
+### Q: Why can't rectangles be detected?
+A: Possible reasons:
+- No obvious rectangles in the image
+- Low image quality or blur
+- Rectangle edges are not clear enough
+- Image size is too small
+
+### Q: How to improve detection accuracy?
+A: Recommendations:
+- Use high-quality, clear images
+- Ensure sufficient contrast for rectangle edges
+- Avoid excessive image compression
+- Appropriate image size (not too small)
+
+### Q: Does it support real-time detection?
+A: The current version mainly focuses on static image detection. Real-time detection functionality will be considered for future versions.
+
+## Contributing
+
+Issues and Pull Requests are welcome!
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
