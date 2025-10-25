@@ -1,0 +1,71 @@
+{
+  "appTitle": "矩形检测器",
+  "detectFromCamera": "拍照检测",
+  "detectFromGallery": "从相册选择",
+  "detecting": "检测中...",
+  "rectangleDetected": "检测到矩形",
+  "noRectangleDetected": "未检测到矩形",
+  "detectionFailed": "检测失败",
+  "rectangle": "矩形",
+  "topLeft": "左上角",
+  "topRight": "右上角",
+  "bottomLeft": "左下角",
+  "bottomRight": "右下角",
+  "selectImageSource": "选择图片来源",
+  "camera": "相机",
+  "gallery": "相册",
+  "settings": "设置",
+  "language": "语言",
+  "detectedRectangles": "检测到的矩形",
+  "detectedRectanglesCount": "检测到 {count} 个矩形",
+  "@detectedRectanglesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rectangleNumber": "矩形 {number}",
+  "@rectangleNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "coordinates": "坐标",
+  "features": "功能特性",
+  "highPrecisionDetection": "高精度检测",
+  "multiPlatformSupport": "多平台支持",
+  "highPerformance": "高性能",
+  "flexibleDetection": "灵活检测",
+  "preciseCoordinates": "精确坐标",
+  "multipleInputTypes": "多种输入类型",
+  "easyIntegration": "易于集成",
+  "supportedPlatforms": "支持平台",
+  "android": "Android",
+  "ios": "iOS",
+  "macos": "macOS",
+  "web": "Web",
+  "windows": "Windows",
+  "linux": "Linux",
+  "supported": "支持",
+  "notSupported": "不支持",
+  "demoResults": "演示效果",
+  "installation": "安装",
+  "usage": "使用方法",
+  "basicUsage": "基本用法",
+  "completeExample": "完整示例",
+  "apiDocumentation": "API 文档",
+  "exampleApplication": "示例应用",
+  "notes": "注意事项",
+  "imageFormat": "图像格式",
+  "performance": "性能",
+  "accuracy": "精度",
+  "memory": "内存",
+  "faq": "常见问题",
+  "contributing": "贡献",
+  "license": "许可证",
+  "english": "English",
+  "chinese": "中文"
+}

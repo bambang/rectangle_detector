@@ -1,0 +1,71 @@
+{
+  "appTitle": "Rectangle Detector",
+  "detectFromCamera": "Capture & Detect",
+  "detectFromGallery": "Select from Gallery",
+  "detecting": "Detecting...",
+  "rectangleDetected": "Rectangle Detected",
+  "noRectangleDetected": "No Rectangle Detected",
+  "detectionFailed": "Detection Failed",
+  "rectangle": "Rectangle",
+  "topLeft": "Top Left",
+  "topRight": "Top Right",
+  "bottomLeft": "Bottom Left",
+  "bottomRight": "Bottom Right",
+  "selectImageSource": "Select Image Source",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "settings": "Settings",
+  "language": "Language",
+  "detectedRectangles": "Detected Rectangles",
+  "detectedRectanglesCount": "{count} rectangles detected",
+  "@detectedRectanglesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rectangleNumber": "Rectangle {number}",
+  "@rectangleNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "coordinates": "Coordinates",
+  "features": "Features",
+  "highPrecisionDetection": "High Precision Detection",
+  "multiPlatformSupport": "Multi-platform Support",
+  "highPerformance": "High Performance",
+  "flexibleDetection": "Flexible Detection",
+  "preciseCoordinates": "Precise Coordinates",
+  "multipleInputTypes": "Multiple Input Types",
+  "easyIntegration": "Easy Integration",
+  "supportedPlatforms": "Supported Platforms",
+  "android": "Android",
+  "ios": "iOS",
+  "macos": "macOS",
+  "web": "Web",
+  "windows": "Windows",
+  "linux": "Linux",
+  "supported": "Supported",
+  "notSupported": "Not Supported",
+  "demoResults": "Demo Results",
+  "installation": "Installation",
+  "usage": "Usage",
+  "basicUsage": "Basic Usage",
+  "completeExample": "Complete Example",
+  "apiDocumentation": "API Documentation",
+  "exampleApplication": "Example Application",
+  "notes": "Notes",
+  "imageFormat": "Image Format",
+  "performance": "Performance",
+  "accuracy": "Accuracy",
+  "memory": "Memory",
+  "faq": "FAQ",
+  "contributing": "Contributing",
+  "license": "License",
+  "english": "English",
+  "chinese": "中文"
+}

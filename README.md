@@ -24,6 +24,7 @@ A Flutter plugin based on native platforms that provides efficient rectangle fea
 - 📐 **精确坐标**：返回矩形四个角点的精确坐标
 - 🔄 **多种输入类型**：支持 Uint8List、ui.Image 和 ImageProvider 三种输入格式
 - 🛠️ **易于集成**：简洁的 API 设计，快速集成到现有项目
+- 🌍 **多语言支持**：支持中文和英文界面，自动保存语言偏好
 
 ## 支持平台
 
@@ -56,13 +57,23 @@ A Flutter plugin based on native platforms that provides efficient rectangle fea
 
 ```yaml
 dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   rectangle_detector: ^1.0.4
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+
+flutter:
+  generate: true
 ```
 
 然后运行：
 
 ```bash
 flutter pub get
+flutter gen-l10n
 ```
 
 ## 使用方法
@@ -129,6 +140,27 @@ Future<void> detectAllRectanglesFromImage(ui.Image image) async {
 Future<void> detectAllRectanglesFromProvider(ImageProvider provider) async {
   final rectangles = await RectangleDetector.detectAllRectanglesFromProvider(provider);
   print('从 ImageProvider 检测到 ${rectangles.length} 个矩形');
+}
+
+// 多语言支持示例
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'generated/app_localizations.dart';
+
+class MultilingualApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.supportedLocales,
+      home: RectangleDetectionPage(),
+    );
+  }
 }
 ```
 
@@ -296,6 +328,25 @@ class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
 
 从 Map 数据创建 RectangleFeature 对象。
 
+## 多语言支持
+
+示例应用支持中文和英文两种语言界面：
+
+### 语言切换
+- 点击 AppBar 右侧的 🌐 图标
+- 选择 "中文" 或 "English"
+- 语言偏好会自动保存，下次启动时使用上次选择的语言
+
+### 支持的语言
+- 🇨🇳 **中文**：默认语言，完整的中文界面
+- 🇺🇸 **English**：完整的英文界面
+
+### 本地化内容
+- 应用标题和按钮文字
+- 状态消息和错误提示
+- 控制面板和设置选项
+- 检测结果和坐标显示
+
 ## 示例应用
 
 本插件包含一个完整的示例应用，展示了如何：
@@ -304,6 +355,7 @@ class _RectangleDetectionPageState extends State<RectangleDetectionPage> {
 - 显示检测结果
 - 在图像上绘制检测到的矩形
 - 处理检测错误
+- 多语言界面切换
 
 运行示例：
 
@@ -338,6 +390,12 @@ A: 建议：
 ### Q: 支持实时检测吗？
 A: 当前版本主要针对静态图像检测，实时检测功能将在后续版本中考虑添加。
 
+### Q: 如何切换语言？
+A: 在示例应用中，点击 AppBar 右侧的 🌐 图标，选择 "中文" 或 "English"。语言偏好会自动保存。
+
+### Q: 支持哪些语言？
+A: 目前支持中文（默认）和英文两种语言界面。
+
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
@@ -361,6 +419,7 @@ A Flutter plugin based on native platforms that provides efficient rectangle fea
 - 📐 **Precise Coordinates**: Returns precise coordinates of four corner points of rectangles
 - 🔄 **Multiple Input Types**: Supports three input formats: Uint8List, ui.Image and ImageProvider
 - 🛠️ **Easy Integration**: Simple API design for quick integration into existing projects
+- 🌍 **Multilingual Support**: Supports Chinese and English interface with automatic language preference saving
 
 ## Supported Platforms
 
@@ -389,17 +448,27 @@ A Flutter plugin based on native platforms that provides efficient rectangle fea
 
 ## Installation
 
-Add the dependency to your `pubspec.yaml` file:
+Add the dependencies to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   rectangle_detector: ^1.0.4
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+
+flutter:
+  generate: true
 ```
 
 Then run:
 
 ```bash
 flutter pub get
+flutter gen-l10n
 ```
 
 ## Usage
@@ -466,6 +535,27 @@ Future<void> detectAllRectanglesFromImage(ui.Image image) async {
 Future<void> detectAllRectanglesFromProvider(ImageProvider provider) async {
   final rectangles = await RectangleDetector.detectAllRectanglesFromProvider(provider);
   print('Detected ${rectangles.length} rectangles from ImageProvider');
+}
+
+// Multilingual support example
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'generated/app_localizations.dart';
+
+class MultilingualApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      localizationsDelegates: [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.supportedLocales,
+      home: RectangleDetectionPage(),
+    );
+  }
 }
 ```
 
@@ -633,6 +723,25 @@ Data class representing rectangle feature points.
 
 Creates a RectangleFeature object from Map data.
 
+## Multilingual Support
+
+The example application supports both Chinese and English language interfaces:
+
+### Language Switching
+- Tap the 🌐 icon in the AppBar
+- Choose "中文" or "English"
+- Language preference is automatically saved and used on next app launch
+
+### Supported Languages
+- 🇨🇳 **Chinese**: Default language with complete Chinese interface
+- 🇺🇸 **English**: Complete English interface
+
+### Localized Content
+- App title and button text
+- Status messages and error prompts
+- Control panel and settings options
+- Detection results and coordinate display
+
 ## Example Application
 
 This plugin includes a complete example application that demonstrates how to:
@@ -641,6 +750,7 @@ This plugin includes a complete example application that demonstrates how to:
 - Display detection results
 - Draw detected rectangles on images
 - Handle detection errors
+- Switch between multilingual interfaces
 
 Run the example:
 
@@ -674,6 +784,12 @@ A: Recommendations:
 
 ### Q: Does it support real-time detection?
 A: The current version mainly focuses on static image detection. Real-time detection functionality will be considered for future versions.
+
+### Q: How to switch languages?
+A: In the example app, tap the 🌐 icon in the AppBar and choose "中文" or "English". Language preference is automatically saved.
+
+### Q: What languages are supported?
+A: Currently supports Chinese (default) and English language interfaces.
 
 ## Contributing
 

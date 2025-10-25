@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:math' show Point;
@@ -6,26 +7,76 @@ import 'dart:math' show Point;
 import 'package:flutter/services.dart';
 import 'package:rectangle_detector/rectangle_detector.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import 'generated/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _currentLocale = const Locale('zh', ''); // Default to Chinese
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocale();
+  }
+
+  Future<void> _loadLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString('language_code') ?? 'zh';
+    setState(() {
+      _currentLocale = Locale(languageCode);
+    });
+  }
+
+  void _changeLanguage(Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language_code', locale.languageCode);
+    setState(() {
+      _currentLocale = locale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Rectangle Detector Demo',
+      locale: _currentLocale,
+      localizationsDelegates: [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.supportedLocales,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const RectangleDetectorDemo(),
+      home: RectangleDetectorDemo(
+        onLanguageChanged: _changeLanguage,
+        currentLocale: _currentLocale,
+      ),
     );
   }
 }
 
 class RectangleDetectorDemo extends StatefulWidget {
-  const RectangleDetectorDemo({super.key});
+  final Function(Locale) onLanguageChanged;
+  final Locale currentLocale;
+
+  const RectangleDetectorDemo({
+    super.key,
+    required this.onLanguageChanged,
+    required this.currentLocale,
+  });
 
   @override
   State<RectangleDetectorDemo> createState() => _RectangleDetectorDemoState();
@@ -37,7 +88,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   ui.Image? _image;
   double _imageWidth = 0;
   double _imageHeight = 0;
-  String _statusMessage = '请选择一张图片开始检测矩形';
+  String _statusMessage = '';
   final ImagePicker _picker = ImagePicker();
   bool _isPanelExpanded = false;
   bool _showOnlyLargestRectangle = false;
@@ -63,12 +114,12 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         _image = frameInfo.image;
         _imageWidth = frameInfo.image.width.toDouble();
         _imageHeight = frameInfo.image.height.toDouble();
-        _statusMessage = '已加载默认测试图片，点击检测按钮开始检测矩形';
+        _statusMessage = S.of(context).rectangleDetected;
         _detectedRectangles = []; // 清除之前的检测结果
       });
     } catch (e) {
       setState(() {
-        _statusMessage = '默认图片加载失败: $e';
+        _statusMessage = '${S.of(context).detectionFailed}: $e';
       });
     }
   }
@@ -96,13 +147,13 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           _image = frameInfo.image;
           _imageWidth = frameInfo.image.width.toDouble();
           _imageHeight = frameInfo.image.height.toDouble();
-          _statusMessage = '图片加载完成，点击检测按钮开始检测矩形';
+          _statusMessage = S.of(context).rectangleDetected;
           _detectedRectangles = []; // 清除之前的检测结果
         });
       }
     } catch (e) {
       setState(() {
-        _statusMessage = '图片选择失败: $e';
+        _statusMessage = '${S.of(context).detectionFailed}: $e';
       });
     }
   }
@@ -111,14 +162,14 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   Future<void> _detectRectangles() async {
     if (_image == null) {
       setState(() {
-        _statusMessage = '请先选择一张图片';
+        _statusMessage = S.of(context).noRectangleDetected;
       });
       return;
     }
 
     setState(() {
       _isDetecting = true;
-      _statusMessage = '正在检测矩形...';
+      _statusMessage = S.of(context).detecting;
     });
 
     try {
@@ -129,7 +180,7 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
       if (byteData == null) {
         setState(() {
           _isDetecting = false;
-          _statusMessage = '图片转换失败';
+          _statusMessage = S.of(context).detectionFailed;
         });
         return;
       }
@@ -144,29 +195,19 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         setState(() {
           _detectedRectangles = rectangles;
           _isDetecting = false;
-          _statusMessage =
-              '检测到 ${rectangles.length} 个矩形:\n'
-              '${rectangles
-                  .map(
-                    (rectangle) =>
-                        'TL: (${rectangle.topLeft.x.toStringAsFixed(1)}, ${rectangle.topLeft.y.toStringAsFixed(1)})\n'
-                        'TR: (${rectangle.topRight.x.toStringAsFixed(1)}, ${rectangle.topRight.y.toStringAsFixed(1)})\n'
-                        'BL: (${rectangle.bottomLeft.x.toStringAsFixed(1)}, ${rectangle.bottomLeft.y.toStringAsFixed(1)})\n'
-                        'BR: (${rectangle.bottomRight.x.toStringAsFixed(1)}, ${rectangle.bottomRight.y.toStringAsFixed(1)})',
-                  )
-                  .join('\n\n')}';
+          _statusMessage = S.of(context).detectedRectanglesCount(rectangles.length);
         });
       } else {
         setState(() {
           _detectedRectangles = [];
           _isDetecting = false;
-          _statusMessage = '未检测到矩形';
+          _statusMessage = S.of(context).noRectangleDetected;
         });
       }
     } catch (e) {
       setState(() {
         _isDetecting = false;
-        _statusMessage = '检测失败: $e';
+        _statusMessage = '${S.of(context).detectionFailed}: $e';
       });
     }
   }
@@ -174,20 +215,53 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('矩形检测演示'), backgroundColor: Colors.blue),
+      appBar: AppBar(
+        title: Text(S.of(context).appTitle),
+        backgroundColor: Colors.blue,
+        actions: [
+          PopupMenuButton<Locale>(
+            icon: const Icon(Icons.language),
+            onSelected: widget.onLanguageChanged,
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<Locale>(
+                  value: const Locale('zh', ''),
+                  child: Row(
+                    children: [
+                      const Text('🇨🇳'),
+                      const SizedBox(width: 8),
+                      Text(S.of(context).chinese),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<Locale>(
+                  value: const Locale('en', ''),
+                  child: Row(
+                    children: [
+                      const Text('🇺🇸'),
+                      const SizedBox(width: 8),
+                      Text(S.of(context).english),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           // 图片显示区域 - 占据全屏
           _image == null
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image_outlined, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
+                      const Icon(Icons.image_outlined, size: 80, color: Colors.grey),
+                      const SizedBox(height: 16),
                       Text(
-                        '请选择一张图片开始检测',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        S.of(context).selectImageSource,
+                        style: const TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -283,12 +357,12 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Flexible(
+            Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  '控制面板',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  S.of(context).settings,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -340,9 +414,9 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      child: const FittedBox(
+                      child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text('选择图片', style: TextStyle(fontSize: 14)),
+                        child: Text(S.of(context).detectFromGallery, style: const TextStyle(fontSize: 14)),
                       ),
                     ),
                   ),
@@ -375,11 +449,11 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
                                 color: Colors.white,
                               ),
                             )
-                          : const FittedBox(
+                          : FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                '检测矩形',
-                                style: TextStyle(fontSize: 14),
+                                S.of(context).detectFromCamera,
+                                style: const TextStyle(fontSize: 14),
                               ),
                             ),
                     ),
@@ -402,10 +476,10 @@ class _RectangleDetectorDemoState extends State<RectangleDetectorDemo> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '显示最大矩形',
-                  style: TextStyle(fontSize: 11),
+                  S.of(context).rectangle,
+                  style: const TextStyle(fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -565,7 +639,7 @@ class RectanglePainter extends CustomPainter {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            textDirection: TextDirection.ltr,
+            textDirection: ui.TextDirection.ltr,
           );
           textPainter.layout();
           textPainter.paint(
